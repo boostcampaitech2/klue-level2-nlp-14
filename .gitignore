@@ -9,6 +9,7 @@ __pycache__/
 
 # Data
 *.json
+*.csv
 *.txt
 *.lock
 
