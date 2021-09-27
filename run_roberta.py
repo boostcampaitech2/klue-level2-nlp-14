@@ -42,11 +42,13 @@ def main():
     wandb_project = "klue_re"
     run_name = "baseline-0927-jinmang2-2"
     report_to = "wandb"
-    submit = f"submission{run_name}" + "test"
+    submit = f"submission-{run_name}" + "test"
     best_model_path = "0927_best"
 
     model_name_or_path = "klue/roberta-large"
-
+    
+    # Settings for Relation Extraction Baseline
+    # <subj>entity</subj> ~~ <obj>entity</obj> ~~
     markers = dict(
         subject_start_marker="<subj>",
         subject_end_marker="</subj>",
@@ -59,17 +61,20 @@ def main():
 
     id2label = {idx: label for idx, label in enumerate(relation_class)}
     label2id = {label: idx for idx, label in enumerate(relation_class)}
-
+    
+    # Get training data
     train_data = load_dataset("load_klue_re.py", split="train")
-    valid_data = load_dataset("klue", "re", split="validation")
-    from o2n import orig2new
-    valid_data = valid_data.map(orig2new)
-
+    # valid_data = load_dataset("klue", "re", split="validation")
+    # from o2n import orig2new
+    # valid_data = valid_data.map(orig2new)
+    
+    # Load Tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
     tokenizer.add_special_tokens(
         {"additional_special_tokens": list(markers.values())}
     )
-
+    
+    # Preprocess and tokenizing
     mark_entity_spans = partial(_mark_entity_spans, **markers)
     convert_example_to_features = partial(
         _convert_example_to_features,
@@ -79,9 +84,10 @@ def main():
 
     train_examples = train_data.map(mark_entity_spans)
     tokenized_train_datasets = train_examples.map(convert_example_to_features)
-    valid_examples = valid_data.map(mark_entity_spans)
-    tokenized_valid_datasets = valid_examples.map(convert_example_to_features)
-
+    # valid_examples = valid_data.map(mark_entity_spans)
+    # tokenized_valid_datasets = valid_examples.map(convert_example_to_features)
+    
+    # Get model (RoBERTa-Large)
     config = AutoConfig.from_pretrained(
         pretrained_model_name_or_path=model_name_or_path,
         num_labels=num_labels,
@@ -95,14 +101,16 @@ def main():
         config=config,
         cache_dir="cache",
     )
-
+    
     if model.config.vocab_size < len(tokenizer):
         print("resize...")
         model.resize_token_embeddings(len(tokenizer))
-
+    
+    # Load metrics and collator
     compute_metrics = make_compute_metrics(relation_class)
     data_collator = DataCollator(tokenizer)
-
+    
+    # Set-up WANDB
     os.environ["WANDB_PROJECT"] = wandb_project
 
     call_wandb = True
@@ -115,11 +123,12 @@ def main():
     if call_wandb:
         import wandb
         wandb.login()
-
+    
+    # Build huggingface Trainer
     args = TrainingArguments(
         output_dir=output_dir,
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
+        # evaluation_strategy="epoch",
+        # save_strategy="epoch",
         learning_rate=learning_rate,
         per_device_train_batch_size=train_batch_size,
         per_device_eval_batch_size=eval_batch_size,
@@ -133,14 +142,16 @@ def main():
         load_best_model_at_end=True,
         metric_for_best_model="auprc",
     )
-
+    
+    # remove unused feature names
     features_name = list(tokenized_train_datasets.features.keys())
     features_name.pop(features_name.index("input_ids"))
     features_name.pop(features_name.index("label"))
     tokenized_train_datasets = tokenized_train_datasets.remove_columns(features_name)
-    tokenized_valid_datasets = tokenized_valid_datasets.remove_columns(features_name)
+    # tokenized_valid_datasets = tokenized_valid_datasets.remove_columns(features_name)
 
     # ====================================
+    # select few samples
     # from datasets import DatasetDict
 
     # tokenized_datasets = DatasetDict(
@@ -156,13 +167,14 @@ def main():
         model,
         args,
         train_dataset=tokenized_train_datasets,
-        eval_dataset=tokenized_valid_datasets,
+        # eval_dataset=tokenized_valid_datasets,
         data_collator=data_collator,
         compute_metrics=compute_metrics,
     )
-
-    # trainer.train()
-    # trainer.model.save_pretrained(best_model_path)
+    
+    # Training
+    trainer.train()
+    trainer.model.save_pretrained(best_model_path)
     
     # Load Checkpoint
     config = PretrainedConfig.from_json_file(os.path.join(best_model_path, "config.json"))
@@ -172,7 +184,7 @@ def main():
     trainer._load_state_dict_in_model(state_dict)
     del state_dict
 
-    print(list(trainer.model.parameters())[-1])
+    # print(list(trainer.model.parameters())[-1])
 
     # Inference
     test_data = load_dataset("load_klue_re.py", split="test")
