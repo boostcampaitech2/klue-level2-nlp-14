@@ -18,6 +18,7 @@ klue_dir/
 prediction/
 wandb/
 best_model/
+results/
 
 # Checkpoint
 *.pt
