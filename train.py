@@ -1,6 +1,7 @@
 import pickle as pickle
 import os
 import pandas as pd
+from functools import partial
 import torch
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -10,9 +11,15 @@ import random
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
 from transformers import AutoTokenizer, AutoConfig, AutoModelForSequenceClassification, Trainer, TrainingArguments, RobertaConfig, RobertaTokenizer, RobertaForSequenceClassification, BertTokenizer
+from datasets import load_dataset
 import argparse
 import wandb
-from load_data import *
+from load_klue_re import KlueRE
+from preprocessing import mark_entity_spans as _mark_entity_spans
+from preprocessing import convert_example_to_features as _convert_example_to_features
+from metrics import make_compute_metrics
+from collator import DataCollator
+from utils import softmax
 
 
 def seed_everything(seed):
@@ -76,60 +83,78 @@ def compute_metrics(pred):
     }
 
 
-def label_to_num(label):
-    num_label = []
-    with open('dict_label_to_num.pkl', 'rb') as f:
-        dict_label_to_num = pickle.load(f)
-    for v in label:
-        num_label.append(dict_label_to_num[v])
-  
-    return num_label
-
-
 def train(args):
     seed_everything(args.seed)
 
-    # load model and tokenizer
     MODEL_NAME = "klue/bert-base"
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    #MODEL_NAME = "klue/roberta-large"
+    NUM_LABELS = KlueRE.BUILDER_CONFIGS[0].features["label"].num_classes
 
     # load dataset
-    train_dataset = load_data("../dataset/train/train.csv")
-    # dev_dataset = load_data("../dataset/train/dev.csv") # validation용 데이터는 따로 만드셔야 합니다.
+    dataset = load_dataset("jinmang2/load_klue_re", script_version="v1.0.1b")
+    train_data = dataset['train']
+    valid_data = dataset['valid']
 
-    train_label = label_to_num(train_dataset['label'].values)
-    # dev_label = label_to_num(dev_dataset['label'].values)
+    # load tokenizer
+    markers = dict(
+        subject_start_marker="<subj>",
+        subject_end_marker="</subj>",
+        object_start_marker="<obj>",
+        object_end_marker="</obj>",
+    )
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    tokenizer.add_special_tokens(
+        {"additional_special_tokens": list(markers.values())}
+    )
+
+    # Preprocess and tokenizing
+    mark_entity_spans = partial(_mark_entity_spans, **markers)
+    convert_example_to_features = partial(
+        _convert_example_to_features,
+        tokenizer=tokenizer,
+        **markers,
+    )
 
     # tokenizing dataset
-    tokenized_train = tokenized_dataset(train_dataset, tokenizer)
-    # tokenized_dev = tokenized_dataset(dev_dataset, tokenizer)
-
-    # make dataset for pytorch.
-    RE_train_dataset = RE_Dataset(tokenized_train, train_label)
-    # RE_dev_dataset = RE_Dataset(tokenized_dev, dev_label)
-
-    # train/valid split
-    sss = StratifiedShuffleSplit(n_splits=1, test_size=args.val_ratio, random_state=args.seed)
-    indices = list(range(len(RE_train_dataset)))
-    labels = RE_train_dataset.labels
-    for valid_index, train_index in sss.split(indices, labels):
-        train_dataset = torch.utils.data.Subset(RE_train_dataset, train_index)
-        valid_dataset = torch.utils.data.Subset(RE_train_dataset, valid_index)
-
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    print(device)
+    train_examples = train_data.map(mark_entity_spans)
+    tokenized_train_datasets = train_examples.map(convert_example_to_features)
+    valid_examples = valid_data.map(mark_entity_spans)
+    tokenized_valid_datasets = valid_examples.map(convert_example_to_features)
 
     # setting model hyperparameter
-    model_config = AutoConfig.from_pretrained(MODEL_NAME)
-    model_config.num_labels = 30
+    relation_class = KlueRE.BUILDER_CONFIGS[0].features["label"].names
+    id2label = {idx: label for idx, label in enumerate(relation_class)}
+    label2id = {label: idx for idx, label in enumerate(relation_class)}
+    model_config = AutoConfig.from_pretrained(
+        pretrained_model_name_or_path=MODEL_NAME,
+        num_labels=NUM_LABELS,
+        cache_dir="cache",
+        id2label=id2label,
+        label2id=label2id,
+    )
 
-    model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME, config=model_config)
+    # load model
+    model = AutoModelForSequenceClassification.from_pretrained(
+        pretrained_model_name_or_path=MODEL_NAME,
+        config=model_config,
+        cache_dir="cache",
+    )
     print(model.config)
-    model.parameters
+
+    if model.config.vocab_size < len(tokenizer):
+        print("resize...")
+        model.resize_token_embeddings(len(tokenizer))
+    
+    # Load metrics and collator
+    #compute_metrics = make_compute_metrics(relation_class)
+    data_collator = DataCollator(tokenizer)
+
+    # setting device
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    print(device)
     model.to(device)
   
-    # 사용한 option 외에도 다양한 option들이 있습니다.
-    # https://huggingface.co/transformers/main_classes/trainer.html#trainingarguments 참고해주세요.
+    # Build huggingface Trainer
     training_args = TrainingArguments(
         output_dir=f'./results/{args.run_name}',          # output directory
         save_total_limit=5,              # number of total save model.
@@ -151,6 +176,13 @@ def train(args):
         report_to=args.report_to,
         run_name=args.run_name
     )
+
+    # remove unused feature names
+    features_name = list(tokenized_train_datasets.features.keys())
+    features_name.pop(features_name.index("input_ids"))
+    features_name.pop(features_name.index("label"))
+    tokenized_train_datasets = tokenized_train_datasets.remove_columns(features_name)
+    tokenized_valid_datasets = tokenized_valid_datasets.remove_columns(features_name)
     
     #optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     #scheduler = CosineAnnealingLR(optimizer, T_max=10, eta_min=1e-6)
@@ -158,15 +190,47 @@ def train(args):
     trainer = Trainer(
         model=model,                         # the instantiated 🤗 Transformers model to be trained
         args=training_args,                  # training arguments, defined above
-        train_dataset=train_dataset,         # training dataset
-        eval_dataset=valid_dataset,             # evaluation dataset
+        train_dataset=tokenized_train_datasets,         # training dataset
+        eval_dataset=tokenized_valid_datasets,             # evaluation dataset
         compute_metrics=compute_metrics,         # define metrics function
+        data_collator=data_collator,
         #optimizers=(optimizer, scheduler)
     )
 
     # train model
     trainer.train()
-    model.save_pretrained('./best_model')
+    trainer.model.save_pretrained(f'./results/{args.run_name}/best_model')
+
+    # Inference
+    test_data = dataset['test']
+    test_id = test_data["guid"]
+    examples = test_data.map(mark_entity_spans)
+    tokenized_test_datasets = examples.map(convert_example_to_features)
+
+    features_name = list(tokenized_test_datasets.features.keys())
+    features_name.pop(features_name.index("input_ids"))
+    # features_name.pop(features_name.index("label"))
+    tokenized_test_datasets = tokenized_test_datasets.remove_columns(features_name)
+
+    logits = trainer.predict(tokenized_test_datasets)[0]
+    probs = softmax(logits).tolist()
+    result = np.argmax(logits, axis=-1).tolist()
+    pred_answer = [id2label[v] for v in result]
+
+    ## make csv file with predicted answer
+    #########################################################
+    # 아래 directory와 columns의 형태는 지켜주시기 바랍니다.
+    output = pd.DataFrame(
+        {
+            'id':test_id,
+            'pred_label':pred_answer,
+            'probs':probs,
+        }
+    )
+    output.to_csv(f'./prediction/{args.run_name}.csv', index=False)
+    #### 필수!! ##############################################
+    print('---- Finish! ----')
+
 
 
 if __name__ == '__main__':
@@ -177,7 +241,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=32, help='input batch size for training (default: 16)')
     parser.add_argument('--valid_batch_size', type=int, default=32, help='input batch size for validing (default: 16)') 
     parser.add_argument('--val_ratio', type=float, default=0.2, help='ratio for validaton (default: 0.2)')
-    parser.add_argument('--lr', type=float, default=5e-4, help='learning rate (default: 5e-5)')
+    parser.add_argument('--lr', type=float, default=4e-5, help='learning rate (default: 5e-5)')
     parser.add_argument('--weight_decay', type=float, default=0.01, help='weight decay (default: 0.01)')
     parser.add_argument('--report_to', default='wandb', help='report_to (default: wandb)')
     parser.add_argument('--wandb_project', default='klue_re_bert_hrlee', help='wandb project name')
