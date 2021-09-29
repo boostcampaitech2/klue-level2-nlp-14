@@ -1,4 +1,5 @@
 import torch
+from .mlm import mask_tokens
 
 
 class DefaultDataCollator:
@@ -24,3 +25,31 @@ class DefaultDataCollator:
             labels = [x["label"] for x in batch]
             batch_encoding.update({"labels": torch.LongTensor(labels)})
         return batch_encoding
+    
+    
+class MLMDataCollator:
+    def __init__(self, tokenizer, max_length=512, mlm_prob=0.15):
+        self.tokenizer = tokenizer
+        self.max_length = max_length
+        self.mlm_prob = mlm_prob
+        
+    def __call__(self, batch):
+        # batch_encoding = self.tokenizer(
+        #     text=[x["sentence"] for x in batch], 
+        #     return_tensors="pt",
+        #     padding=True,
+        #     max_length=self.max_length,
+        #     truncation=True,
+        # )
+        input_ids = [x["input_ids"] for x in batch]
+        batch_encoding = self.tokenizer.pad(
+            {"input_ids": input_ids},
+            max_length=self.max_length,
+            return_tensors="pt",
+        )
+        inputs, labels = mask_tokens(
+            batch_encoding["input_ids"],
+            self.tokenizer,
+            self.mlm_prob,
+        )
+        return {"input_ids": inputs, "labels": labels}

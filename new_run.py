@@ -107,7 +107,7 @@ def main():
         )
         model_cls = getattr(models, model_args.architectures,
                             AutoModelForSequenceClassification)
-        model = AutoModelForSequenceClassification.from_pretrained(
+        model = model_cls.from_pretrained(
             model_args.model_name_or_path,
             config=config,
             cache_dir=model_args.model_cache_dir,

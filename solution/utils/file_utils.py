@@ -48,6 +48,15 @@ MARKERS = dict(
     object_end_marker="</obj>",
 )
 
+
+class TAPT:
+    label = None
+    id2label = None
+    label2id = None
+    num_labels = 2 # set default
+    markers = MARKERS
+
+    
 class KLUE_RE:
     label = RELATION_CLASS
     subject_entity = SUBJECT_ENTITIES
@@ -59,5 +68,6 @@ class KLUE_RE:
 
 
 TASK_INFOS_MAP = {
-    "klue_re": KLUE_RE
+    "klue_re": KLUE_RE,
+    "tapt": TAPT,
 }

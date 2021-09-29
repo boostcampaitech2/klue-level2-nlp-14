@@ -46,4 +46,5 @@ N_CLASSES = len(RELATION_CLASS)
 
 TASK_METRIC_MAP = {
     "klue_re": compute_klue_re_leaderboard,
+    "tapt": None,
 }
