@@ -7,19 +7,22 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 import sklearn
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 import random
 from sklearn.model_selection import StratifiedShuffleSplit
-from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
+from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, confusion_matrix
 from transformers import AutoTokenizer, AutoConfig, AutoModelForSequenceClassification, Trainer, TrainingArguments, RobertaConfig, RobertaTokenizer, RobertaForSequenceClassification, BertTokenizer
-from datasets import load_dataset
+from datasets import load_dataset, concatenate_datasets
 import argparse
 import wandb
 from load_klue_re import KlueRE
 from preprocessing import mark_entity_spans as _mark_entity_spans
 from preprocessing import convert_example_to_features as _convert_example_to_features
-from metrics import make_compute_metrics
+#from metrics import make_compute_metrics
 from collator import DataCollator
 from utils import softmax
+from trainer import ImbalancedSamplerTrainer
 
 
 def seed_everything(seed):
@@ -65,6 +68,16 @@ def klue_re_auprc(probs, labels):
     return np.average(score) * 100.0
 
 
+def get_confusion_matrix(labels, preds):
+    cm = confusion_matrix(labels, preds)
+    norm_cm = cm / np.sum(cm, axis=1)[:,None]
+    relation_class = KlueRE.BUILDER_CONFIGS[0].features["label"].names
+    cm = pd.DataFrame(norm_cm, index=relation_class, columns=relation_class)
+    fig = plt.figure(figsize=(12,9))
+    sns.heatmap(cm, annot=True)
+    return fig
+
+
 def compute_metrics(pred):
     """ validation을 위한 metrics function """
     labels = pred.label_ids
@@ -75,7 +88,10 @@ def compute_metrics(pred):
     f1 = klue_re_micro_f1(preds, labels)
     auprc = klue_re_auprc(probs, labels)
     acc = accuracy_score(labels, preds) # 리더보드 평가에는 포함되지 않습니다.
-
+    
+    cm_fig = get_confusion_matrix(labels, preds)
+    wandb.log({'confusion matrix': wandb.Image(cm_fig)})
+    
     return {
         'micro f1 score': f1,
         'auprc' : auprc,
@@ -88,12 +104,15 @@ def train(args):
 
     MODEL_NAME = "klue/bert-base"
     #MODEL_NAME = "klue/roberta-large"
+    #MODEL_NAME = "bert-base-multilingual-cased"
+    #MODEL_NAME = "bert-base-multilingual-uncased"
     NUM_LABELS = KlueRE.BUILDER_CONFIGS[0].features["label"].num_classes
 
     # load dataset
     dataset = load_dataset("jinmang2/load_klue_re", script_version="v1.0.1b")
     train_data = dataset['train']
     valid_data = dataset['valid']
+    # full_train_data = concatenate_datasets([dataset["train"], dataset["valid"]])
 
     # load tokenizer
     markers = dict(
@@ -128,7 +147,6 @@ def train(args):
     model_config = AutoConfig.from_pretrained(
         pretrained_model_name_or_path=MODEL_NAME,
         num_labels=NUM_LABELS,
-        cache_dir="cache",
         id2label=id2label,
         label2id=label2id,
     )
@@ -137,7 +155,6 @@ def train(args):
     model = AutoModelForSequenceClassification.from_pretrained(
         pretrained_model_name_or_path=MODEL_NAME,
         config=model_config,
-        cache_dir="cache",
     )
     print(model.config)
 
@@ -157,7 +174,7 @@ def train(args):
     # Build huggingface Trainer
     training_args = TrainingArguments(
         output_dir=f'./results/{args.run_name}',          # output directory
-        save_total_limit=5,              # number of total save model.
+        save_total_limit=3,              # number of total save model.
         save_steps=500,                 # model saving step.
         num_train_epochs=args.epochs,              # total number of training epochs
         learning_rate=args.lr,               # learning_rate
@@ -173,6 +190,7 @@ def train(args):
                                     # `epoch`: Evaluate every end of epoch.
         eval_steps = 500,            # evaluation step.
         load_best_model_at_end = True,
+        #metric_for_best_model = "eval_loss",
         report_to=args.report_to,
         run_name=args.run_name
     )
@@ -187,7 +205,7 @@ def train(args):
     #optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     #scheduler = CosineAnnealingLR(optimizer, T_max=10, eta_min=1e-6)
 
-    trainer = Trainer(
+    trainer = ImbalancedSamplerTrainer(
         model=model,                         # the instantiated 🤗 Transformers model to be trained
         args=training_args,                  # training arguments, defined above
         train_dataset=tokenized_train_datasets,         # training dataset
