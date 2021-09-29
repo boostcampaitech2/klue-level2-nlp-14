@@ -4,94 +4,37 @@ import pandas as pd
 import torch
 import sklearn
 import wandb
-import random
 import argparse
 import numpy as np
+from utils import softmax, seed_everything
+from metrics import compute_metrics
+from config import label_list, device, markers
 from functools import partial
 from preprocessing import mark_entity_spans as _mark_entity_spans
 from preprocessing import convert_example_to_features as _convert_example_to_features
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
 from transformers import AutoTokenizer, AutoConfig, AutoModelForSequenceClassification, Trainer, TrainingArguments, RobertaConfig, RobertaTokenizer, RobertaForSequenceClassification, BertTokenizer
 from load_data import *
+from imbalanced_sampler_trainer import ImbalancedSamplerTrainer
 from datasets import load_dataset
 from collator import DataCollator
 
-label_list = ['no_relation', 'org:top_members/employees', 'org:members',
-       'org:product', 'per:title', 'org:alternate_names',
-       'per:employee_of', 'org:place_of_headquarters', 'per:product',
-       'org:number_of_employees/members', 'per:children',
-       'per:place_of_residence', 'per:alternate_names',
-       'per:other_family', 'per:colleagues', 'per:origin', 'per:siblings',
-       'per:spouse', 'org:founded', 'org:political/religious_affiliation',
-       'org:member_of', 'per:parents', 'org:dissolved',
-       'per:schools_attended', 'per:date_of_death', 'per:date_of_birth',
-       'per:place_of_birth', 'per:place_of_death', 'org:founded_by',
-       'per:religion']
-
-def seed_everything(seed=42):
-    
-    random.seed(seed)
-    np.random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    
-    #if use multi-GPU
-    torch.backends.cudnn.deterministic=True
-    torch.backends.cudnn.benchmark=False # for faster training, but not deterministic
-
-def klue_re_micro_f1(preds, labels):
-    """KLUE-RE micro f1 (except no_relation)"""
-    no_relation_label_idx = label_list.index("no_relation")
-    label_indices = list(range(len(label_list)))
-    label_indices.remove(no_relation_label_idx)
-    return sklearn.metrics.f1_score(labels, preds, average="micro", labels=label_indices) * 100.0
-
-def klue_re_auprc(probs, labels):
-    """KLUE-RE AUPRC (with no_relation)"""
-    labels = np.eye(30)[labels]
-
-    score = np.zeros((30,))
-    for c in range(30):
-        targets_c = labels.take([c], axis=1).ravel()
-        preds_c = probs.take([c], axis=1).ravel()
-        precision, recall, _ = sklearn.metrics.precision_recall_curve(targets_c, preds_c)
-        score[c] = sklearn.metrics.auc(recall, precision)
-    return np.average(score) * 100.0
-
-def compute_metrics(pred):
-    """ validation을 위한 metrics function """
-    labels = pred.label_ids
-    preds = pred.predictions.argmax(-1)
-    probs = pred.predictions
-
-  # calculate accuracy using sklearn's function
-    f1 = klue_re_micro_f1(preds, labels)
-    auprc = klue_re_auprc(probs, labels)
-    acc = accuracy_score(labels, preds) # 리더보드 평가에는 포함되지 않습니다.
-
-    return {
-      'micro f1 score': f1,
-      'auprc' : auprc,
-      'accuracy': acc,
-    }
-
-def label_to_num(label):
-    num_label = []
-    with open('dict_label_to_num.pkl', 'rb') as f:
-        dict_label_to_num = pickle.load(f)
-    for v in label:
-        num_label.append(dict_label_to_num[v])
+# def label_to_num(label):
+#     num_label = []
+#     with open('dict_label_to_num.pkl', 'rb') as f:
+#         dict_label_to_num = pickle.load(f)
+#     for v in label:
+#         num_label.append(dict_label_to_num[v])
   
-    return num_label
+#     return num_label
 
-def train():
+def train(args):
     # load model and tokenizer
     # MODEL_NAME = "bert-base-uncased"
-    MODEL_NAME = "monologg/koelectra-small-v3-discriminator"
-    wandb_project = "klue_re_KoElectra_small_jgyu"
+    seed_everything()
+
+    MODEL_NAME = args.model_name
+    wandb_project = args.wandb_project
     report_to = "wandb"
 
     relation_class = label_list
@@ -99,13 +42,6 @@ def train():
 
     id2label = {idx: label for idx, label in enumerate(relation_class)}
     label2id = {label: idx for idx, label in enumerate(relation_class)}
-
-    markers = dict(
-        subject_start_marker="<subj>",
-        subject_end_marker="</subj>",
-        object_start_marker="<obj>",
-        object_end_marker="</obj>",
-    )
 
     train_data = load_dataset("jinmang2/load_klue_re", script_version="v1.0.1b")
 
@@ -141,8 +77,7 @@ def train():
     #RE_train_dataset = RE_Dataset(tokenized_train, train_dataset['label'])
     #RE_eval_dataset = RE_Dataset(tokenized_eval, eval_dataset['label'])
 
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
+    
     print(device)
     # setting model hyperparameter
     model_config =  AutoConfig.from_pretrained(
@@ -168,15 +103,15 @@ def train():
     # 사용한 option 외에도 다양한 option들이 있습니다.
     # https://huggingface.co/transformers/main_classes/trainer.html#trainingarguments 참고해주세요.
     training_args = TrainingArguments(
-        output_dir='baseline_0928_jeangyu_epoch_10',          # output directory
+        output_dir=args.output_dir,          # output directory
         save_total_limit=5,              # number of total save model.
-        save_steps=500,                 # model saving step.
-        num_train_epochs=10,              # total number of training epochs
-        learning_rate=3e-5,               # learning_rate
-        per_device_train_batch_size=32,  # batch size per device during training
-        per_device_eval_batch_size=32,   # batch size for evaluation
-        warmup_steps=500,                # number of warmup steps for learning rate scheduler
-        weight_decay=0.01,               # strength of weight decay
+        save_steps=args.save_steps,                 # model saving step.
+        num_train_epochs=args.epochs,              # total number of training epochs
+        learning_rate=args.lr,               # learning_rate
+        per_device_train_batch_size=args.train_batch,  # batch size per device during training
+        per_device_eval_batch_size=args.valid_batch,   # batch size for evaluation
+        warmup_steps=args.warmup_steps,                # number of warmup steps for learning rate scheduler
+        weight_decay=args.weight_decay,               # strength of weight decay
         logging_dir='./logs',            # directory for storing logs
         logging_steps=100,              # log saving step.
         evaluation_strategy='steps', # evaluation strategy to adopt during training
@@ -194,7 +129,7 @@ def train():
     features_name.pop(features_name.index("label"))
     tokenized_train_datasets = tokenized_train_datasets.remove_columns(features_name)
 
-    trainer = Trainer(
+    trainer = ImbalancedSamplerTrainer(
         model=model,                         # the instantiated 🤗 Transformers model to be trained
         args=training_args,                  # training arguments, defined above
         train_dataset=tokenized_train_datasets,         # training dataset
@@ -202,7 +137,7 @@ def train():
         compute_metrics=compute_metrics,         # define metrics function
         data_collator=data_collator
       )
-
+    
       # train model
     trainer.train()
     model.save_pretrained('./best_model')
@@ -233,21 +168,27 @@ def train():
             'probs':probs,
         }
     )
-    output.to_csv(f'./prediction/submit.csv', index=False)
+    output.to_csv(f'./prediction/{args.submit}.csv', index=False)
     #### 필수!! ##############################################
     print('---- Finish! ----')
 
-def softmax(arr: np.ndarray, axis: int = -1):
-    c = arr.max(axis=axis, keepdims=True)
-    s = arr - c
-    nominator = np.exp(s)
-    denominator = nominator.sum(axis=axis, keepdims=True)
-    probs = nominator / denominator
-    return probs
-
-def main():
-    seed_everything()
-    train()
-
+def main(args):
+    train(args)
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--output_dir', type=str, default='baseline_0928_jeangyu',help='output directory')
+    parser.add_argument('--save_steps', type=int, default=500,help='number of steps to save (default: 1)')
+    parser.add_argument('--epochs', type=int, default=5,help='number of epochs to train (default: 1)')
+    parser.add_argument('--lr', type=float, default=3e-5,help='learning rate (default: 3e-5)')
+    parser.add_argument('--train_batch', type=int, default=32,help='batch size per device during training')
+    parser.add_argument('--valid_batch', type=int, default=32,help='batch size for evaluation')
+    parser.add_argument('--warmup_steps', type=int, default=500,help='number of warmup steps for learning rate scheduler')
+    parser.add_argument('--weight_decay', type=float, default=0.01,help='strength of weight decay')
+    parser.add_argument('--model_name', type=str, default='monologg/koelectra-base-v3-discriminator',help='model name')
+    parser.add_argument('--wandb_project', default='klue_re_KoElectra_base_jgyu', help='wandb project name')
+    parser.add_argument('--submit', default='submission_0', help='submission file name')
+
+    args = parser.parse_args()
+
+    main(args)    
