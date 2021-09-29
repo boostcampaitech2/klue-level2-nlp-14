@@ -1,7 +1,29 @@
+# Created by https://www.toptal.com/developers/gitignore/api/python
+# Edit at https://www.toptal.com/developers/gitignore?templates=python
+
+### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Data
+*.json
+*.csv
+*.txt
+*.lock
+
+# Folder
+cache/
+klue_dir/
+prediction/
+wandb/
+best_model/
+
+# Checkpoint
+*.pt
+*.bin
+*.pth
 
 # C extensions
 *.so
@@ -139,3 +161,11 @@ dmypy.json
 
 # Results
 /submission
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# End of https://www.toptal.com/developers/gitignore/api/python
