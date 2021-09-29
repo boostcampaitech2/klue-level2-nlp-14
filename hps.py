@@ -41,7 +41,7 @@ def tune_transformer(num_samples=8, gpus_per_trial=0, smoke_test=False, args=Non
         random.seed(seed)
         os.environ['PYTHONHASHSEED'] = str(seed)
         np.random.seed(seed)
-        torch.manual_seed(seed)
+        torch.manual_seed(seed)``
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
         torch.backends.cudnn.deterministic = True

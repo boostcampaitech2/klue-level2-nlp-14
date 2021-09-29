@@ -122,7 +122,7 @@ def main(args):
     # TODO: Add arguments
     training_args = TrainingArguments(
                 # Checkpoint
-                output_dir=args.output_dir,
+                output_dir=OUTPUT_DIR,
                 save_strategy="epoch",
 
                 # Run
@@ -174,26 +174,35 @@ def main(args):
         wandb.finish()
     
     if args.do_predict:
+        # TODO 여기서 Dummy Trainer 만들고, inference 함수 수정
+
+
+
         try:
             model = best_model
+            training_args = TrainingArguments(output_dir=OUTPUT_DIR)
+            model.to(device)
+            trainer = Trainer(model=model,
+                             args=training_args,
+                             data_collator=data_collator,
+                             )
         except:
             print(f"Load model from checkpoint : {args.checkpoint}")
             # Assign your checkpint directory to the --model_name_or_path argument.
-            tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, cache_dir=CACHE_DIR)
-            tokenizer.add_special_tokens(
-            {"additional_special_tokens": list(MARKERS.values())}
-            )
-
-            model = AutoModelForSequenceClassification.from_pretrained(
-                args.checkpoint,
-                config=model_config,
-                cache_dir=CACHE_DIR
-            )
+            training_args = TrainingArguments(output_dir=OUTPUT_DIR,
+                                              resume_from_checkpoint=args.checkpoint)
             model.to(device)
+            trainer = Trainer(model=model.from_pretrained(args.checkpoint),
+                             args=training_args,
+                             data_collator=data_collator,
+                             )
 
-        pred_answer, output_prob = inference(model, tokenized_datasets['test'], data_collator, device)
+            print(f"Model from HF-hub : {model.config.name_or_path} / Model from checkpoint :  {trainer.model.config.name_or_path}") 
+
+        pred_answer, output_prob = inference(trainer, tokenized_datasets['test'])
         pred_answer = num_to_label(pred_answer)
-        output = pd.DataFrame({'id':tokenized_datasets['test']['guid'],'pred_label':pred_answer,'probs':output_prob,})
+        output = pd.DataFrame({'id':tokenized_datasets['test']['guid'],
+                               'pred_label':pred_answer,'probs':output_prob,})
         
         if (os.path.isdir('submission') == False):
             os.mkdir('submission')
