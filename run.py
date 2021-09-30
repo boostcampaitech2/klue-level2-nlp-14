@@ -119,10 +119,10 @@ def main(args):
             name=WANDB_RUN_NAME,
             )
 
-    # TODO: Add arguments
+    # For Common Training Setting
     training_args = TrainingArguments(
                 # Checkpoint
-                output_dir=args.output_dir,
+                output_dir=OUTPUT_DIR,
                 save_strategy="epoch",
 
                 # Run
@@ -167,33 +167,91 @@ def main(args):
                 data_collator=data_collator,
                 )
 
+
+
+    # For Full Dataset Setting (Change DATAVER in run.sh)
+    # training_args = TrainingArguments(
+    #             # Checkpoint
+    #             output_dir=OUTPUT_DIR,
+    #             save_strategy="epoch",
+
+    #             # Run
+    #             do_train=True,
+    #             do_eval=args.do_eval,
+
+    #             # Data processing
+    #             num_train_epochs=args.num_train_epochs,
+    #             per_device_train_batch_size=args.per_device_train_batch_size,
+    #             # per_device_eval_batch_size=args.per_device_eval_batch_size,
+    #             dataloader_num_workers=args.num_workers,
+
+    #             ## Optimization
+    #             lr_scheduler_type=args.lr_scheduler_type,
+    #             learning_rate=args.learning_rate,
+    #             warmup_ratio=args.warmup_ratio,
+
+    #             ## Regularization
+    #             weight_decay=args.weight_decay,
+
+    #             # Logging
+    #             logging_dir='./logs',
+    #             report_to=args.report_to,
+
+    #             # Evaluation
+    #             # metric_for_best_model='auprc',
+    #             # evaluation_strategy='epoch',
+
+    #             # ETC    
+    #             # load_best_model_at_end=True,
+    #             seed=args.seed,
+    #             fp16=args.fp16,
+    #             )
+
+    # trainer = Trainer(
+    #             model=model,
+    #             args=training_args,
+    #             train_dataset=tokenized_datasets['train'],
+    #             # train_dataset=tokenized_datasets['train'].shard(index=1, num_shards=100), # for smoke test
+    #             # eval_dataset=tokenized_datasets['valid'],
+    #             compute_metrics=compute_metrics,
+    #             data_collator=data_collator,
+    #             )
+
     if args.do_train:
         best_model = trainer.train()
     
     if call_wandb:
         wandb.finish()
-    
+
     if args.do_predict:
-        try:
-            model = best_model
-        except:
-            print(f"Load model from checkpoint : {args.checkpoint}")
-            # Assign your checkpint directory to the --model_name_or_path argument.
-            tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, cache_dir=CACHE_DIR)
-            tokenizer.add_special_tokens(
-            {"additional_special_tokens": list(MARKERS.values())}
-            )
+        # TODO 여기서 Dummy Trainer 만들고, inference 함수 수정
 
-            model = AutoModelForSequenceClassification.from_pretrained(
-                args.checkpoint,
-                config=model_config,
-                cache_dir=CACHE_DIR
-            )
-            model.to(device)
+        # try:
+        #     model = best_model
+        #     training_args = TrainingArguments(output_dir=OUTPUT_DIR)
+        #     model.to(device)
+        #     trainer = Trainer(model=model,
+        #                      args=training_args,
+        #                      data_collator=data_collator,
+        #                      )
+        # except:
+        print(f"Load model from checkpoint : {args.checkpoint}")
+        # Assign your checkpint directory to the --model_name_or_path argument.
+        training_args = TrainingArguments(output_dir=OUTPUT_DIR,
+                                            resume_from_checkpoint=args.checkpoint)
+        # model.to(device)
+        
+        trainer = Trainer(model=model.from_pretrained(args.checkpoint),
+                            args=training_args,
+                            data_collator=data_collator,
+                            )
 
-        pred_answer, output_prob = inference(model, tokenized_datasets['test'], data_collator, device)
+        print(f"Model from HF-hub : {model.config.name_or_path} / Model from checkpoint :  {trainer.model.config.name_or_path}") 
+
+        pred_answer, output_prob = inference(trainer, tokenized_datasets['test'])
         pred_answer = num_to_label(pred_answer)
-        output = pd.DataFrame({'id':tokenized_datasets['test']['guid'],'pred_label':pred_answer,'probs':output_prob,})
+        output = pd.DataFrame({'id':tokenized_datasets['test']['guid'],
+                               'pred_label':pred_answer,'probs':output_prob,})
         
         if (os.path.isdir('submission') == False):
             os.mkdir('submission')
