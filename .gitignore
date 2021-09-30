@@ -43,6 +43,7 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
 share/python-wheels/
 *.egg-info/
 .installed.cfg
@@ -72,7 +73,6 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
-cover/
 
 # Translations
 *.mo
@@ -95,7 +95,6 @@ instance/
 docs/_build/
 
 # PyBuilder
-.pybuilder/
 target/
 
 # Jupyter Notebook
@@ -106,9 +105,7 @@ profile_default/
 ipython_config.py
 
 # pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
+.python-version
 
 # pipenv
 #   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
@@ -153,6 +150,18 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Datasets & Logs & Cache
+/cache
+/hp_search
+/hp_search_test
+/klue_dir
+/results
+/wandb
+/.git
+
+# Results
+/submission
 
 # pytype static type analyzer
 .pytype/

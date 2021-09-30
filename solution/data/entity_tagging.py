@@ -1,7 +1,8 @@
-from typing import Dict, Tuple, List, Any
+import torch
+from functools import partial
+from typing import Tuple, List, Any, Dict
 
 
-# create_example
 def mark_entity_spans(examples,
                       subject_start_marker: str, subject_end_marker: str,
                       object_start_marker: str, object_end_marker: str):
