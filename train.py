@@ -110,6 +110,7 @@ def train(args):
         learning_rate=args.lr,               # learning_rate
         per_device_train_batch_size=args.train_batch,  # batch size per device during training
         per_device_eval_batch_size=args.valid_batch,   # batch size for evaluation
+        warmup_ratio=args.warmup_ratio,
         warmup_steps=args.warmup_steps,                # number of warmup steps for learning rate scheduler
         weight_decay=args.weight_decay,               # strength of weight decay
         logging_dir='./logs',            # directory for storing logs
@@ -129,7 +130,8 @@ def train(args):
     features_name.pop(features_name.index("label"))
     tokenized_train_datasets = tokenized_train_datasets.remove_columns(features_name)
 
-    trainer = ImbalancedSamplerTrainer(
+    #trainer = ImbalancedSamplerTrainer(
+    trainer = Trainer(
         model=model,                         # the instantiated 🤗 Transformers model to be trained
         args=training_args,                  # training arguments, defined above
         train_dataset=tokenized_train_datasets,         # training dataset
@@ -177,16 +179,17 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--output_dir', type=str, default='baseline_0928_jeangyu',help='output directory')
+    parser.add_argument('--output_dir', type=str, default='baseline_0930_jeangyu_imb_sampler_dice',help='output directory')
     parser.add_argument('--save_steps', type=int, default=500,help='number of steps to save (default: 1)')
     parser.add_argument('--epochs', type=int, default=5,help='number of epochs to train (default: 1)')
     parser.add_argument('--lr', type=float, default=3e-5,help='learning rate (default: 3e-5)')
-    parser.add_argument('--train_batch', type=int, default=32,help='batch size per device during training')
-    parser.add_argument('--valid_batch', type=int, default=32,help='batch size for evaluation')
+    parser.add_argument('--train_batch', type=int, default=16,help='batch size per device during training')
+    parser.add_argument('--valid_batch', type=int, default=16,help='batch size for evaluation'),
+    parser.add_argument('--warmup_ratio', type=float, default=0.1, help='warmup ratio (default=0.1'),
     parser.add_argument('--warmup_steps', type=int, default=500,help='number of warmup steps for learning rate scheduler')
     parser.add_argument('--weight_decay', type=float, default=0.01,help='strength of weight decay')
-    parser.add_argument('--model_name', type=str, default='monologg/koelectra-base-v3-discriminator',help='model name')
-    parser.add_argument('--wandb_project', default='klue_re_KoElectra_base_jgyu', help='wandb project name')
+    parser.add_argument('--model_name', type=str, default='xlm-roberta-large',help='model name')
+    parser.add_argument('--wandb_project', default='klue_re_XLM_Roberta_large_jgyu', help='wandb project name')
     parser.add_argument('--submit', default='submission_0', help='submission file name')
 
     args = parser.parse_args()

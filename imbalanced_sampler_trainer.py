@@ -1,7 +1,6 @@
 from sadice import SelfAdjDiceLoss
 from torch.utils.data import DataLoader
 from transformers import Trainer
-
 from torchsampler import ImbalancedDatasetSampler
 
 class ImbalancedSamplerTrainer(Trainer):
@@ -28,3 +27,13 @@ class ImbalancedSamplerTrainer(Trainer):
             num_workers=self.args.dataloader_num_workers,
             pin_memory=self.args.dataloader_pin_memory,
         )
+
+    def compute_loss(self, model, inputs, return_outputs=False):
+        labels = inputs.pop("labels")
+        outputs = model(**inputs)
+        logits = outputs.logits
+
+        criterion = SelfAdjDiceLoss()
+        loss = criterion(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+        
+        return (loss, outputs) if return_outputs else loss
