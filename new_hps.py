@@ -266,12 +266,45 @@ def tune_transformer(num_samples=8, gpus_per_trial=0, smoke_test=False, args=Non
             )
 
     elif hps_args.backend == 'optuna':
-        pass
+        def hp_space_optuna(trial):
+            # KLUE Paper Baseline
+            # How to set : https://optuna.readthedocs.io/en/stable/reference/generated/optuna.trial.Trial.html?highlight=suggest_float#optuna.trial.Trial.suggest_float
+            return {
+                "per_device_train_batch_size": trial.suggest_categorical("per_device_train_batch_size", hps_args.hp_per_device_train_batch_size),
+                "per_device_eval_batch_size": 32,
+                "learning_rate": trial.suggest_categorical("learning_rate", hps_args.hp_learning_rate),
+                "warmup_ratio":  trial.suggest_categorical("warmup_ratio", hps_args.hp_warmup_ratio),
+                "weight_decay":  trial.suggest_categorical("weight_decay", hps_args.hp_weight_decay),
+                "num_train_epochs":  trial.suggest_categorical("num_train_epochs", hps_args.hp_num_train_epochs),
+                "max_steps": 1 if smoke_test else -1
+            }
+
+        best_trial = trainer.hyperparameter_search(
+            hp_space=hp_space_optuna,
+            backend=hps_args.backend,
+            n_trials=num_samples,
+            compute_objective=my_objective
+            )
 
     print(best_trial)
-
+    model_name_or_path = model_args.model_name_or_path.replace('/','-')
+    trial_save_path = os.path.join(best_hp_dir,
+        f'{hps_args.backend}_{model_name_or_path}_{best_trial.run_id}_{hps_args.objective_metric}_{best_trial.objective}.json')
+    with open(trial_save_path, 'w', encoding='utf-8') as f:\
+            json.dump(best_trial.hyperparameters, f, ensure_ascii=False, indent=4)
+    print(f"Save best trial file in {trial_save_path}")
 
 if __name__ == "__main__":
+    '''
+    Usage example
+    python hps.py --model_name_or_path klue/roberta-large
+    # checkpoint 및 best hyperparameter는 `hp_search` 폴더 내에 저장됨
+    # best hyperparameter는 json 형태의 파일로 저장
+    # 용량에 주의! num_samples 만큼의 checkpoint를 저장
+    - 저장하지 않도록 설정하려면 --save_ckpt False(기본값)
+    - --save_chkp True로 설정한 경우, optuna는 가장 마지막 체크포인트만 저장되고,
+      ray는 무시하고 저장됨
+    '''
     parser = HfArgumentParser(
         (DataArguments,
          TrainingArguments,
