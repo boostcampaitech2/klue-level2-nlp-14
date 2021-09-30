@@ -9,7 +9,7 @@ DATA_DIR="data"
 VERSION="v1.0.0"
 WANDB_PROJECT="klue_re_klue-roberta-large-daeug"
 
-# Example setting
+# For Common Training setting
 python run.py --output_dir ${OUTPUT_DIR}/${RUN_NAME} \
                 --model_name_or_path "klue/roberta-large" \
                 --dataset_ver ${VERSION} \
@@ -28,6 +28,32 @@ python run.py --output_dir ${OUTPUT_DIR}/${RUN_NAME} \
                 --warmup_ratio 0.2 \
                 --weight_decay 0.01 \
                 --report_to "wandb" \
+                --wandb_project ${WANDB_PROJECT} \
+                --wandb_run_name ${RUN_NAME} \
+                --metric_key "eval_auprc" \
+                --fp16 True \
+                --gpus 0
+
+# For Full Dataset setting
+python run.py --output_dir ${OUTPUT_DIR}/${RUN_NAME} \
+                --model_name_or_path "klue/roberta-large" \
+                --checkpoint "/opt/ml/klue_re/klue_dir/baseline-0929-roberta-large-warmup0.2_lr3e-5-newdata/checkpoint-3045" \
+                --dataset_ver ${VERSION} \
+                --cache_dir ${CACHE_DIR} \
+                --max_seq_length 128 \
+                --seed 42 \
+                --do_train False \
+                --do_eval False \
+                --do_predict True \
+                --num_train_epochs 3 \
+                --per_device_train_batch_size 32 \
+                --per_device_eval_batch_size 32 \
+                --num_workers 8 \
+                --learning_rate 3e-5 \
+                --lr_scheduler_type "linear" \
+                --warmup_ratio 0.2 \
+                --weight_decay 0.01 \
+                --report_to "none" \
                 --wandb_project ${WANDB_PROJECT} \
                 --wandb_run_name ${RUN_NAME} \
                 --metric_key "eval_auprc" \
