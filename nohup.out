@@ -1,0 +1,26 @@
+Namespace(batch_size=32, epochs=10, lr=4e-05, report_to='wandb', run_name='baseline_bert_base', seed=42, val_ratio=0.2, valid_batch_size=32, wandb_project='klue_re_bert_chaeeun', weight_decay=0.01)
+wandb: Currently logged in as: kiyoung2 (use `wandb login --relogin` to force relogin)
+Reusing dataset klue_re (/opt/ml/.cache/huggingface/datasets/klue_re/re/1.0.1/72db5b4f9111ca3106d23ecec67a53f750c70b70b32c5512f925baac3b39a0de)
+  0%|          | 0/3 [00:00<?, ?it/s]100%|██████████| 3/3 [00:00<00:00, 465.55it/s]
+Loading cached processed dataset at /opt/ml/.cache/huggingface/datasets/klue_re/re/1.0.1/72db5b4f9111ca3106d23ecec67a53f750c70b70b32c5512f925baac3b39a0de/cache-13d28ce73fbc0f53.arrow
+  0%|          | 0/25976 [00:00<?, ?ex/s]  0%|          | 0/25976 [00:00<?, ?ex/s]
+Traceback (most recent call last):
+  File "train.py", line 319, in <module>
+    train()
+  File "train.py", line 135, in train
+    tokenized_train_datasets = train_examples.map(convert_example_to_features)
+  File "/opt/conda/lib/python3.8/site-packages/datasets/arrow_dataset.py", line 1686, in map
+    return self._map_single(
+  File "/opt/conda/lib/python3.8/site-packages/datasets/arrow_dataset.py", line 185, in wrapper
+    out: Union["Dataset", "DatasetDict"] = func(self, *args, **kwargs)
+  File "/opt/conda/lib/python3.8/site-packages/datasets/fingerprint.py", line 398, in wrapper
+    out = func(self, *args, **kwargs)
+  File "/opt/conda/lib/python3.8/site-packages/datasets/arrow_dataset.py", line 2030, in _map_single
+    example = apply_function_on_filtered_inputs(example, i, offset=offset)
+  File "/opt/conda/lib/python3.8/site-packages/datasets/arrow_dataset.py", line 1939, in apply_function_on_filtered_inputs
+    function(*fn_args, effective_indices, **fn_kwargs) if with_indices else function(*fn_args, **fn_kwargs)
+  File "/opt/ml/code/preprocessing.py", line 109, in convert_example_to_features
+    tokens = fix_tokenization_error(examples["text"])
+  File "/opt/ml/code/preprocessing.py", line 88, in fix_tokenization_error
+    text = subject_entity + '[SEP]' + object_entity + text
+TypeError: unsupported operand type(s) for +: 'dict' and 'str'
