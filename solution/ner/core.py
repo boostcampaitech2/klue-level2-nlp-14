@@ -1,3 +1,4 @@
+import os
 import json
 from typing import List, Tuple
 from kss import split_sentences
@@ -15,25 +16,35 @@ TODO
 - 영일중 sentence splitter 코드
 - 영일중 ner 모델 포팅 및 적용
 """
-
+NER_FILES = {
+        "ko": dict(
+            label="./label.json",
+            vocab="./vocab.json",
+            wsd="./wsd.json",
+            model="jinmang2/roberta-ko-ner"
+        )
+    }
 
 class NERInterface:
     
     @classmethod
-    def from_pretrained(cls, **filenames):
+    def from_pretrained(cls, lang="ko"):
+        filenames = NER_FILES[lang]
+        path = "/".join(__file__.split("/")[:-1])
         wsd = filenames.pop("wsd", None)
         wsd_dict = None
         if wsd is not None:
-            wsd_dict = json.load(open(wsd, "r"))
+            wsd_dict = json.load(open(os.path.join(path, wsd), "r"))
         vocab_file = filenames.pop("vocab", None)
         vocab = None
         if vocab_file is not None:
-            tokenizer = KoBpeTokenizer.from_file(vocab_file)
+            tokenizer = KoBpeTokenizer.from_file(os.path.join(path, vocab_file))
         label_file = filenames.pop("label", None)
         label = None
         if label_file is not None:
-            label = json.load(open(label_file, "r"))
+            label = json.load(open(os.path.join(path, label_file), "r"))
         model_file = filenames.pop("model", None)
+        model = None
         if model_file is not None:
             model = RobertaForCharNER.from_pretrained(
                 model_file
