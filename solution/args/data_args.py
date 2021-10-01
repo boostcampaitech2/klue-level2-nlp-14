@@ -16,3 +16,6 @@ class DataArguments:
     collator_name: str = field(
         default="default", metadata={"help": ""},
     )
+    prep_pipeline_name: str = field(
+        default="entity_tagging", metadata={"help": ""},
+    )

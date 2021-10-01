@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Anys
 from kss import split_sentences
 import numpy as np
 from .bpetokenizer import KoBpeTokenizer
@@ -28,7 +28,7 @@ NER_FILES = {
 class NERInterface:
     
     @classmethod
-    def from_pretrained(cls, lang="ko"):
+    def from_pretrained(cls, lang="ko", device="cuda"):
         filenames = NER_FILES[lang]
         path = "/".join(__file__.split("/")[:-1])
         wsd = filenames.pop("wsd", None)
@@ -48,12 +48,14 @@ class NERInterface:
         if model_file is not None:
             model = RobertaForCharNER.from_pretrained(
                 model_file
-            )
+            ).to(device)
+
         return NERInterface(
             model=model,
             charbpe=tokenizer,
             label=label,
             wsd_dict=wsd_dict,
+            device=device,
         )
     
     def __init__(
@@ -97,6 +99,14 @@ class NERInterface:
     @property
     def label2id(self):
         return {label: i for label, i in self._label.items()}
+    
+    def _prepare_inputs(self, inputs: Dict[str, Union[torch.Tensor, Any]]) -> Dict[str, Union[torch.Tensor, Any]]:
+        for k, v in inputs.items():
+            if isinstance(v, torch.Tensor):
+                kwargs = dict(device=self.device)
+                inputs[k] = v.to(**kwargs)
+                
+        return inputs
         
     def apply_dict(self, tags: List[Tuple[str, str]]):
         """
@@ -206,6 +216,7 @@ class NERInterface:
             add_special_tokens=True, 
             return_tensors=True
         )
+        input_ids = self._prepare_inputs({"input_ids": input_ids})
         # predict tags
         logits = self._model(input_ids).logits
         results = logits[:, 1:-1:, :].argmax(dim=-1).cpu().numpy()

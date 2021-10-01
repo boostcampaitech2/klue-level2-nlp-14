@@ -30,8 +30,7 @@ from solution.args import (
 )
 from solution.data import (
     COLLATOR_MAP,
-    mark_entity_spans as _mark_entity_spans,
-    convert_example_to_features as _convert_example_to_features,
+    PREP_PIPELINE,
 )
 from solution.utils import (
     softmax,
@@ -83,18 +82,13 @@ def main():
         {"additional_special_tokens": list(task_infos.markers.values())}
     )
     collate_cls = COLLATOR_MAP[data_args.collator_name]
+    pipeline = PREP_PIPELINE[data_args.prep_pipeline_name]
     data_collator = collate_cls(tokenizer)
     
     # Preprocess and tokenizing
-    mark_entity_spans = partial(_mark_entity_spans, **task_infos.markers)
-    convert_example_to_features = partial(
-        _convert_example_to_features,
-        tokenizer=tokenizer,
-        **task_infos.markers,
-    )
-    
-    examples = dataset.map(mark_entity_spans)
-    tokenized_datasets = examples.map(convert_example_to_features)
+    tokenized_datasets = pipeline(dataset,
+                                  tokenizer,
+                                  task_infos,)
     
     # Get model
     def model_init():
@@ -130,22 +124,14 @@ def main():
     if call_wandb:
         import wandb
         wandb.login()
-        
-    # remove unused feature names
-    features_name = list(tokenized_datasets["train"].features.keys())
-    features_name.pop(features_name.index("input_ids"))
-    features_name.pop(features_name.index("label"))
-    tokenized_datasets = tokenized_datasets.remove_columns(features_name)
     
+    # TODO datasetdict가 아닌 경우 처리
     train_dataset = tokenized_datasets["train"]
-    eval_dataset = None
-    if training_args.do_eval:
-        try:
-            eval_dataset = tokenized_datasets["valid"]
-        except KeyError:
-            print("Dataset Version Error")
-            return None
-    
+    try:
+        eval_dataset = tokenized_datasets["valid"]
+    except KeyError:
+        eval_dataset = None
+
     trainer = Trainer(
         args=training_args,
         model_init=model_init,
@@ -180,13 +166,10 @@ def main():
             split="test",
         )
         test_id = test_dataset["guid"]
-        examples = test_dataset.map(mark_entity_spans)
-        tokenized_test_datasets = examples.map(convert_example_to_features)
-
-        features_name = list(tokenized_test_datasets.features.keys())
-        features_name.pop(features_name.index("input_ids"))
-        # features_name.pop(features_name.index("label"))
-        tokenized_test_datasets = tokenized_test_datasets.remove_columns(features_name)
+        tokenized_test_datasets = pipeline(test_dataset,
+                                           tokenizer,
+                                           task_infos,)
+        tokenized_test_datasets = tokenized_test_datasets.remove_columns(["label"])
         
         logits = trainer.predict(tokenized_test_datasets)[0]
         probs = softmax(logits).tolist()

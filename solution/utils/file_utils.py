@@ -48,6 +48,25 @@ MARKERS = dict(
     object_end_marker="</obj>",
 )
 
+TYPE_MARKERS = dict(
+    subject_start_per_marker="<subj:PER>",
+    subject_start_org_marker="<subj:ORG>",
+    subject_end_per_marker="</subj:PER>",
+    subject_end_org_marker="</subj:ORG>",
+    object_start_per_marker="<obj:PER>",
+    object_start_org_marker="<obj:ORG>",
+    object_start_loc_marker="<obj:LOC>",
+    object_start_dat_marker="<obj:DAT>",
+    object_start_poh_marker="<obj:POH>",
+    object_start_noh_marker="<obj:NOH>",
+    object_end_per_marker="</obj:PER>",
+    object_end_org_marker="</obj:ORG>",
+    object_end_loc_marker="</obj:LOC>",
+    object_end_dat_marker="</obj:DAT>",
+    object_end_poh_marker="</obj:POH>",
+    object_end_noh_marker="</obj:NOH>",
+)
+
 
 class TAPT:
     label = None
@@ -65,9 +84,14 @@ class KLUE_RE:
     label2id = {label: idx for idx, label in enumerate(RELATION_CLASS)}
     num_labels = NUM_CLASSES
     markers = MARKERS
+    
+    
+class KLUE_RE_TYPE(KLUE_RE):
+    markers = TYPE_MARKERS
 
 
 TASK_INFOS_MAP = {
     "klue_re": KLUE_RE,
     "tapt": TAPT,
+    "klue_re_type": KLUE_RE_TYPE,
 }
