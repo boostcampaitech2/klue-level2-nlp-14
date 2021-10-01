@@ -15,7 +15,7 @@ def inference(model, tokenized_sent, device):
     test dataset을 DataLoader로 만들어 준 후,
     batch_size로 나눠 model이 예측 합니다.
     """
-    dataloader = DataLoader(tokenized_sent, batch_size=16, shuffle=False)
+    dataloader = DataLoader(tokenized_sent, batch_size=32, shuffle=False)
     model.eval()
     
     output_pred = []
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
   
     # model dir
-    parser.add_argument('--model_dir', type=str, default="./best_model")
+    parser.add_argument('--inference',help='inference mode')
     args = parser.parse_args()
     print(args)
     main(args)
