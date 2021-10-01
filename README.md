@@ -15,6 +15,17 @@ python new_run.py configs/{YOUR_CONFIG}.yaml
 python new_hps.py configs/{YOUR_CONFIG}.yaml
 ```
 
+- run ner module
+
+```python
+>>> from solution.ner import NERInterface
+[Korean Sentence Splitter]: Initializing Kss..
+>>> ner = NERInterface.from_pretrained("ko")
+>>> ner(["이순신은 조선 중기의 무신이다", "오늘도 좋은 하루입니다. 기영이 화이팅입니다!"])
+[[('이순신', 'PERSON'), ('은', 'O'), (' ', 'O'), ('조선 중기', 'DATE'), ('의', 'O'), (' ', 'O'), ('무신', 'CIVILIZATION'), ('이다', 'O')], [('오늘', 'DATE'), ('도', 'O'), (' ', 'O'), ('좋은', 'O'), (' ', 'O'), ('하루', 'DATE'), ('입니다.', 'O'), (' ', 'O'), ('기영', 'PERSON'), ('이', 'O'), (' ', 'O'), ('화이팅입니다!', 'O')]]
+
+```
+
 
 ## Reference
 - [Ray Tune - pbt_transformers_example](https://docs.ray.io/en/master/tune/examples/pbt_transformers.html)
