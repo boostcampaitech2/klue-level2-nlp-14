@@ -7,22 +7,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Data
-*.json
-*.txt
-*.lock
-
-# Folder
-cache/
-klue_dir/
-prediction/
-wandb/
-best_model/
-
-# Checkpoint
-*.pt
-*.bin
-*.pth
 
 # C extensions
 *.so
@@ -158,4 +142,3 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# End of https://www.toptal.com/developers/gitignore/api/python
