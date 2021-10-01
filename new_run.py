@@ -24,7 +24,7 @@ from transformers.configuration_utils import PretrainedConfig
 from solution.args import (
     HfArgumentParser,
     DataArguments,
-    TrainingArguments,
+    NewTrainingArguments,
     ModelingArguments,
     ProjectArguments,
 )
@@ -32,6 +32,9 @@ from solution.data import (
     COLLATOR_MAP,
     mark_entity_spans as _mark_entity_spans,
     convert_example_to_features as _convert_example_to_features,
+)
+from solution.trainers import (
+    TRAINER_MAP,
 )
 from solution.utils import (
     softmax,
@@ -47,7 +50,7 @@ import solution.models as models
 def main():
     parser = HfArgumentParser(
         (DataArguments,
-         TrainingArguments,
+         NewTrainingArguments,
          ModelingArguments,
          ProjectArguments,)
     )
@@ -146,7 +149,8 @@ def main():
             print("Dataset Version Error")
             return None
     
-    trainer = Trainer(
+    trainer_class = TRAINER_MAP[training_args.trainer_class]
+    trainer = trainer_class(
         args=training_args,
         model_init=model_init,
         train_dataset=train_dataset,
