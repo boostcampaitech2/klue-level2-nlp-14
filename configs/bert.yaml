@@ -7,9 +7,9 @@ DataArguments:
 
 # TrainingArguments
 TrainingArguments:
-  trainer_class : default
+  trainer_class : balanced
   report_to: wandb
-  run_name: bert_base_test
+  run_name: bert_base_test_balanced
   output_dir: output
   learning_rate: 3e-5
   do_train: True
