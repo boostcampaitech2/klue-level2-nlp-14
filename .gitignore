@@ -20,6 +20,8 @@ prediction/
 wandb/
 best_model/
 results/
+output/
+best/
 
 # Checkpoint
 *.pt

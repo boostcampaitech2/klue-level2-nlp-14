@@ -1,0 +1,67 @@
+# Data Arguments
+DataArguments:
+  name: jinmang2/load_klue_re
+  revision: v1.0.1b
+  data_cache_dir: cache
+  collator_name: default
+
+# TrainingArguments
+TrainingArguments:
+  report_to: none
+  run_name: beomi_kcbert_large
+  output_dir: output
+  learning_rate: 3e-5
+  do_train: True
+  do_eval: True
+  do_predict: False
+  evaluation_strategy: epoch
+  save_strategy: epoch
+  per_device_train_batch_size: 32
+  per_device_eval_batch_size: 32
+  overwrite_output_dir: True
+  num_train_epochs: 3
+  # eval_steps: 100
+  # save_steps: 100
+  save_total_limit: 5
+  fp16: True
+  weight_decay: 0.01
+  warmup_steps: 0
+  load_best_model_at_end: True
+  metric_for_best_model: loss
+  logging_dir: logs
+  logging_strategy: steps
+  logging_steps: 500
+  lr_scheduler_type: linear
+  skip_memory_metrics: True
+
+
+# Model Arguments
+ModelingArguments:
+  architectures: AutoModelForSequenceClassification
+  model_name_or_path: beomi/kcbert-large
+  model_cache_dir: cache
+
+# Project Arguments
+ProjectArguments:
+  task: klue_re
+  wandb_project: klue_re_bert_new_hrlee
+  save_model_dir: best
+  submit_dir: prediction
+  checkpoint: None
+
+# Hyperparameter Search Arguments
+HPSearchArguments:
+  smoke_test: False
+  ray_address: None
+  server_address: None
+  method: ASHA
+  backend: optuna
+  num_samples: 2
+  save_ckpt: False
+  objective_metric: eval_loss
+  hp_per_device_train_batch_size: [8, 16, 32]
+  hp_per_device_eval_batch_size: 32
+  hp_learning_rate: [1e-5, 2e-5, 3e-5, 5e-5]
+  hp_warmup_ratio: [0., 0.1, 0.2, 0.6]
+  hp_num_train_epochs: [2, 3]
+  hp_weight_decay: [0.0, 0.01]
