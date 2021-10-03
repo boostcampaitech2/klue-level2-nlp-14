@@ -1,7 +1,7 @@
-from sadice import SelfAdjDiceLoss
 from torch.utils.data import DataLoader
 from transformers import Trainer
 from torchsampler import ImbalancedDatasetSampler
+from loss import FocalLoss, DiceLoss
 
 class ImbalancedSamplerTrainer(Trainer):
     def get_train_dataloader(self) -> DataLoader:
@@ -32,8 +32,9 @@ class ImbalancedSamplerTrainer(Trainer):
         labels = inputs.pop("labels")
         outputs = model(**inputs)
         logits = outputs.logits
-
-        criterion = SelfAdjDiceLoss()
+        
+        # criterion = choose DiceLoss or FocalLoss
+        criterion = FocalLoss(gamma=0.5)
         loss = criterion(logits.view(-1, self.model.config.num_labels), labels.view(-1))
         
         return (loss, outputs) if return_outputs else loss
