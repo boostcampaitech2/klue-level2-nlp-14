@@ -1,0 +1,45 @@
+# Data Arguments
+DataArguments:
+  name: jinmang2/load_klue_re
+  revision: v1.0.0
+  data_cache_dir: cache
+  collator_name: default
+
+# TrainingArguments
+TrainingArguments:
+  report_to: wandb
+  run_name: finetune_tapt_0930
+  output_dir: output
+  learning_rate: 3e-5
+  do_train: True
+  do_eval: True
+  do_predict: True
+  evaluation_strategy: epoch
+  save_strategy: epoch
+  per_device_train_batch_size: 32
+  per_device_eval_batch_size: 32
+  num_train_epochs: 5
+  # eval_steps: 100
+  # save_steps: 100
+  save_total_limit: 5
+  fp16: True
+  weight_decay: 0.01
+  warmup_steps: 200
+  load_best_model_at_end: True
+  metric_for_best_model: micro_f1
+  logging_dir: logs
+  lr_scheduler_type: linear
+
+# Model Arguments
+ModelingArguments:
+  architectures: AutoModelForSequenceClassification
+  model_name_or_path: tapt_roberta_0930
+  model_cache_dir: cache
+
+# Project Arguments
+ProjectArguments:
+  task: klue_re
+  wandb_project: klue_re
+  save_model_dir: finetune_tapt_0930
+  submit_dir: prediction
+  checkpoint: None
