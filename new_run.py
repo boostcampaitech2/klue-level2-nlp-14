@@ -30,7 +30,10 @@ from solution.args import (
 )
 from solution.data import (
     COLLATOR_MAP,
-    PREP_PIPELINE,
+    PREPROCESSING_PIPELINE,
+)
+from solution.models import (
+    MODEL_INIT_FUNC,
 )
 from solution.utils import (
     softmax,
@@ -39,8 +42,8 @@ from solution.utils import (
     TASK_INFOS_MAP,
     CONFIG_FILE_NAME,
     PYTORCH_MODEL_NAME,
+    INFERENCE_PIPELINE,
 )
-import solution.models as models
 
 
 def main():
@@ -82,34 +85,19 @@ def main():
         {"additional_special_tokens": list(task_infos.markers.values())}
     )
     collate_cls = COLLATOR_MAP[data_args.collator_name]
-    pipeline = PREP_PIPELINE[data_args.prep_pipeline_name]
+    prep_pipeline = PREP_PIPELINE[data_args.prep_pipeline_name]
     data_collator = collate_cls(tokenizer)
     
     # Preprocess and tokenizing
-    tokenized_datasets = pipeline(dataset,
-                                  tokenizer,
-                                  task_infos,)
+    tokenized_datasets = prep_pipeline(dataset,
+                                       tokenizer,
+                                       task_infos,)
     
     # Get model
-    def model_init():
-        config = AutoConfig.from_pretrained(
-            model_args.model_name_or_path,
-            num_labels=task_infos.num_labels,
-            cache_dir=model_args.model_cache_dir,
-            id2label=task_infos.id2label,
-            label2id=task_infos.label2id,
-        )
-        model_cls = getattr(models, model_args.architectures,
-                            AutoModelForSequenceClassification)
-        model = model_cls.from_pretrained(
-            model_args.model_name_or_path,
-            config=config,
-            cache_dir=model_args.model_cache_dir,
-        )
-        if model.config.vocab_size < len(tokenizer):
-            print("resize...")
-            model.resize_token_embeddings(len(tokenizer))
-        return model
+    _model_init = MODEL_INIT_FUNC[model_args.model_init]
+    model_init = partial(_model_init, 
+                         model_args=model_args, 
+                         tokenizer=tokenizer,)
             
     # Set-up WANDB
     os.environ["WANDB_PROJECT"] = project_args.wandb_project
@@ -171,25 +159,11 @@ def main():
                                            task_infos,)
         tokenized_test_datasets = tokenized_test_datasets.remove_columns(["label"])
         
-        logits = trainer.predict(tokenized_test_datasets)[0]
-        probs = softmax(logits).tolist()
-        result = np.argmax(logits, axis=-1).tolist()
-        pred_answer = [task_infos.id2label[v] for v in result]
-        
-        ## make csv file with predicted answer
-        #########################################################
-        # 아래 directory와 columns의 형태는 지켜주시기 바랍니다.
-        output = pd.DataFrame(
-            {
-                'id':test_id,
-                'pred_label':pred_answer,
-                'probs':probs,
-            }
-        )
-        submir_dir = project_args.submit_dir
-        run_name = training_args.run_name
-        output.to_csv(f'./{submir_dir}/submission_{run_name}.csv', index=False)
-        #### 필수!! ##############################################
+        infer_pipeline = INFERENCE_PIPELINE[model_args.infer_pipeline_name]
+        infer_pipeline(tokenized_test_datasets,
+                       task_infos,
+                       training_args
+                      )
     print('---- Finish! ----')
         
 
