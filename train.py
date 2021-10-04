@@ -19,14 +19,6 @@ from imbalanced_sampler_trainer import ImbalancedSamplerTrainer
 from datasets import load_dataset
 from collator import DataCollator
 
-# def label_to_num(label):
-#     num_label = []
-#     with open('dict_label_to_num.pkl', 'rb') as f:
-#         dict_label_to_num = pickle.load(f)
-#     for v in label:
-#         num_label.append(dict_label_to_num[v])
-  
-#     return num_label
 
 def train(args):
     # load model and tokenizer
@@ -62,21 +54,6 @@ def train(args):
 
     tokenized_train_datasets = train_examples.map(convert_example_to_features)
     tokenized_eval_datasets = eval_examples.map(convert_example_to_features)
-    # load dataset
-    #train_dataset, eval_dataset = load_data("../dataset/train/train.csv")
-    
-
-    #train_label = label_to_num(train_dataset['label'].values)
-    #eval_label = label_to_num(eval_dataset['label'].values)
-
-    # tokenizing dataset
-    #tokenized_train = tokenized_dataset(train_dataset, tokenizer)
-    #tokenized_eval = tokenized_dataset(eval_dataset, tokenizer)
-
-    # make dataset for pytorch.
-    #RE_train_dataset = RE_Dataset(tokenized_train, train_dataset['label'])
-    #RE_eval_dataset = RE_Dataset(tokenized_eval, eval_dataset['label'])
-
     
     print(device)
     # setting model hyperparameter
@@ -130,8 +107,8 @@ def train(args):
     features_name.pop(features_name.index("label"))
     tokenized_train_datasets = tokenized_train_datasets.remove_columns(features_name)
 
-    #trainer = ImbalancedSamplerTrainer(
-    trainer = Trainer(
+    trainer = ImbalancedSamplerTrainer(
+    #trainer = Trainer(
         model=model,                         # the instantiated 🤗 Transformers model to be trained
         args=training_args,                  # training arguments, defined above
         train_dataset=tokenized_train_datasets,         # training dataset
@@ -194,4 +171,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args)    
+    main(args)
