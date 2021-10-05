@@ -83,7 +83,7 @@ def main():
     )
     collate_cls = COLLATOR_MAP[data_args.collator_name]
     pipeline = PREP_PIPELINE[data_args.prep_pipeline_name]
-    data_collator = collate_cls(tokenizer)
+    data_collator = collate_cls(tokenizer, max_length=data_args.max_length)
     
     # Preprocess and tokenizing
     tokenized_datasets = pipeline(dataset,

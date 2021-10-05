@@ -19,3 +19,6 @@ class DataArguments:
     prep_pipeline_name: str = field(
         default="entity_tagging", metadata={"help": ""},
     )
+    max_length: int = field(
+        default=256, metadata={"help": "max token length"},
+    )
