@@ -42,10 +42,30 @@ def compute_klue_re_leaderboard(eval_pred):
     }
 
 
+def compute_klue_re_recent_leaderboard(eval_pred):
+    # Parsing predictions and labels
+    preds, labels = eval_pred
+    # 아래 한줄이 :compute_klue_re_leaderboard:와 다릅니다
+    labels = labels[:, 0] # get relation class
+    # Preprocess no_relation for micro F1
+    no_relation_label_idx = RELATION_CLASS.index("no_relation")
+    label_indices = list(range(len(RELATION_CLASS)))
+    label_indices.remove(no_relation_label_idx)
+    # Compute micro F1
+    micro_f1 = compute_micro_f1(preds, labels, label_indices)
+    # Compute AURPC
+    auprc = compute_auprc(preds, labels)
+    return {
+        "micro_f1": micro_f1,
+        "auprc": auprc,
+    }
+
+
 N_CLASSES = len(RELATION_CLASS)
 
 TASK_METRIC_MAP = {
     "klue_re": compute_klue_re_leaderboard,
     "tapt": None,
     "klue_re_type": compute_klue_re_leaderboard,
+    "recent": compute_klue_re_recent_leaderboard,
 }

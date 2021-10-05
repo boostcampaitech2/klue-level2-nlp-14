@@ -46,7 +46,6 @@ ProjectArguments:
   task: klue_re
   wandb_project: klue_re
   save_model_dir: best
-  submit_dir: prediction
   checkpoint: None
 
 # Hyperparameter Search Arguments

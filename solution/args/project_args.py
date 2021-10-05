@@ -13,9 +13,9 @@ class ProjectArguments:
     save_model_dir: str = field(
         default="best", metadata={"help": ""},
     )
-    submit_dir: str = field(
-        default=None, metadata={"help": ""},
-    )
     checkpoint: str = field(
         default=None, metadata={"help": ""},
+    )
+    infer_pipeline_name: str = field(
+        default="basic", metadata={"help": ""},
     )

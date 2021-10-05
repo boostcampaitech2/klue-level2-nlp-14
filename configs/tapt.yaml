@@ -44,5 +44,4 @@ ProjectArguments:
   task: tapt
   wandb_project: klue_re
   save_model_dir: tapt_roberta_0930
-  submit_dir: prediction
   checkpoint: None

@@ -41,5 +41,4 @@ ProjectArguments:
   task: klue_re
   wandb_project: klue_re
   save_model_dir: finetune_tapt_0930
-  submit_dir: prediction
   checkpoint: None

@@ -46,6 +46,11 @@ from solution.utils import (
 )
 
 
+# debug for cuda
+os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+
 def main():
     parser = HfArgumentParser(
         (DataArguments,
@@ -85,7 +90,7 @@ def main():
         {"additional_special_tokens": list(task_infos.markers.values())}
     )
     collate_cls = COLLATOR_MAP[data_args.collator_name]
-    prep_pipeline = PREP_PIPELINE[data_args.prep_pipeline_name]
+    prep_pipeline = PREPROCESSING_PIPELINE[data_args.prep_pipeline_name]
     data_collator = collate_cls(tokenizer)
     
     # Preprocess and tokenizing
@@ -93,12 +98,30 @@ def main():
                                        tokenizer,
                                        task_infos,)
     
+    # =============================================================
+    # UnitTest input
+    # print(tokenized_datasets["train"][0])
+    # return None
+    # =============================================================
+    
     # Get model
     _model_init = MODEL_INIT_FUNC[model_args.model_init]
     model_init = partial(_model_init, 
-                         model_args=model_args, 
+                         model_args=model_args,
+                         task_infos=task_infos,
                          tokenizer=tokenizer,)
-            
+    
+    # =============================================================
+    # UnitTest RECENT
+    # model = model_init()
+    # output = model(torch.LongTensor(2, 10).random_(10000),
+    #                head_ids=torch.LongTensor([0,8]),
+    #                labels=torch.LongTensor(
+    #                    [[0,0,4,0,0,2,0,0,0,0,0,0,0,],
+    #                     [0,8,0,0,0,0,0,0,0,0,1,0,0,]]))
+    # return output
+    # =============================================================
+    
     # Set-up WANDB
     os.environ["WANDB_PROJECT"] = project_args.wandb_project
 
@@ -119,10 +142,17 @@ def main():
         eval_dataset = tokenized_datasets["valid"]
     except KeyError:
         eval_dataset = None
+        
+    # =============================================================
+    train_dataset = train_dataset.select([i for i in range(1000)])
+    if eval_dataset is not None:
+        eval_dataset = eval_dataset.select([i for i in range(500)])
+    # =============================================================
 
     trainer = Trainer(
+        model=model_init(),
         args=training_args,
-        model_init=model_init,
+        # model_init=model_init,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         data_collator=data_collator,
@@ -153,16 +183,16 @@ def main():
             cache_dir=data_args.data_cache_dir,
             split="test",
         )
-        test_id = test_dataset["guid"]
-        tokenized_test_datasets = pipeline(test_dataset,
-                                           tokenizer,
-                                           task_infos,)
-        tokenized_test_datasets = tokenized_test_datasets.remove_columns(["label"])
+        tokenized_test_datasets = prep_pipeline(test_dataset,
+                                                tokenizer,
+                                                task_infos,
+                                                mode="test",)
         
-        infer_pipeline = INFERENCE_PIPELINE[model_args.infer_pipeline_name]
+        infer_pipeline = INFERENCE_PIPELINE[project_args.infer_pipeline_name]
         infer_pipeline(tokenized_test_datasets,
-                       task_infos,
-                       training_args
+                       trainer=trainer,
+                       task_infos=task_infos,
+                       training_args=training_args
                       )
     print('---- Finish! ----')
         
