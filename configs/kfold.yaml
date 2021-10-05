@@ -1,0 +1,46 @@
+# Data Arguments
+DataArguments:
+  name: jinmang2/load_klue_re
+  revision: v2.0.1
+  data_cache_dir: cache
+  collator_name: default
+
+# TrainingArguments
+TrainingArguments:
+  trainer_class: default
+  report_to: wandb
+  run_name: bert_base
+  output_dir: output
+  learning_rate: 5e-5
+  do_train: True
+  do_eval: True
+  do_predict: True
+  evaluation_strategy: epoch
+  save_strategy: epoch
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 16
+  num_train_epochs: 3
+  # eval_steps: 100
+  # save_steps: 100
+  save_total_limit: 5
+  fp16: True
+  weight_decay: 0.0
+  warmup_ratio: 0.0
+  load_best_model_at_end: True
+  metric_for_best_model: micro_f1
+  logging_dir: logs
+  lr_scheduler_type: linear
+
+# Model Arguments
+ModelingArguments:
+  architectures: AutoModelForSequenceClassification
+  model_name_or_path: klue/bert-base
+  model_cache_dir: cache
+
+# Project Arguments
+ProjectArguments:
+  task: klue_re
+  wandb_project: klue_re_kfold_hrlee
+  save_model_dir: best
+  submit_dir: prediction
+  checkpoint: None
