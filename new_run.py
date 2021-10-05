@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 
 from datasets import load_dataset
+from pandas_streaming.df import train_test_apart_stratify, train_test_connex_split
 
 import transformers
 from transformers import (
@@ -45,6 +46,22 @@ from solution.utils import (
     PYTORCH_MODEL_NAME,
 )
 import solution.models as models
+
+
+class RE_Dataset(torch.utils.data.Dataset):
+    def __init__(self, df):
+        self.df = df
+        self.label = list(self.df['label'])
+
+    def __getitem__(self, idx):
+        #item = {key: val[idx].clone().detach() for key, val in self.pair_dataset.items()}
+        #print(f"idx: {idx}")
+        item = {col: self.df.iloc[idx][col] for col in self.df.columns}
+        item['label'] = torch.tensor(item['label'])
+        return item
+
+    def __len__(self):
+        return len(self.df)
 
 
 def main():
@@ -133,14 +150,40 @@ def main():
     if call_wandb:
         import wandb
         wandb.login()
-        
-    # remove unused feature names
-    features_name = list(tokenized_datasets["train"].features.keys())
-    features_name.pop(features_name.index("input_ids"))
-    features_name.pop(features_name.index("label"))
-    tokenized_datasets = tokenized_datasets.remove_columns(features_name)
     
-    train_dataset = tokenized_datasets["train"]
+
+    # train/valid split by entity
+    full_dataset = tokenized_datasets["train"]
+    full_dataset_df = pd.DataFrame(full_dataset)
+    full_dataset_df['subj_entity'] = full_dataset_df['subject_entity'].apply(lambda x:x['word'].strip())
+    full_dataset_df['subj_type'] = full_dataset_df['subject_entity'].apply(lambda x:x['type'].strip())
+    full_dataset_df['obj_entity'] = full_dataset_df['object_entity'].apply(lambda x:x['word'].strip())
+    full_dataset_df['obj_type'] = full_dataset_df['object_entity'].apply(lambda x:x['type'].strip())
+    
+    train, valid = train_test_connex_split(
+        full_dataset_df[['guid', 'subj_entity', 'obj_entity']], 
+        groups=["subj_entity", "obj_entity"], 
+        test_size=0.1, fail_imbalanced=0.3
+    )
+    
+    train_indices = list(train.drop_duplicates().guid)
+    valid_indices = list(valid.drop_duplicates().guid)
+
+    print(full_dataset_df.columns)
+    train_dataset = RE_Dataset(full_dataset_df.iloc[train_indices])
+    eval_dataset = RE_Dataset(full_dataset_df.iloc[valid_indices])
+
+    ##train_dataset = full_dataset[train_indices]
+    #eval_dataset = full_dataset[valid_indices]
+    
+    # remove unused feature names
+    #features_name = list(tokenized_datasets["train"].features.keys())
+    #features_name.pop(features_name.index("input_ids"))
+    #features_name.pop(features_name.index("label"))
+    #train_dataset = train_dataset.remove_columns(features_name)
+    #eval_dataset = eval_dataset.remove_columns(features_name)
+
+    '''
     eval_dataset = None
     if training_args.do_eval:
         try:
@@ -148,6 +191,7 @@ def main():
         except KeyError:
             print("Dataset Version Error")
             return None
+    '''
     
     trainer_class = TRAINER_MAP[training_args.trainer_class]
     trainer = trainer_class(

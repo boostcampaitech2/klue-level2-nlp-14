@@ -20,7 +20,7 @@ class BalancedSamplerTrainer(Trainer):
 
 
         def get_label(dataset):
-            return dataset["label"]
+            return dataset.label
 
         train_sampler = ImbalancedDatasetSampler(
             train_dataset, callback_get_label=get_label
