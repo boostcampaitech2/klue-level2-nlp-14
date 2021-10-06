@@ -80,15 +80,14 @@ class Entity_layer_BertEmbeddings(nn.Module):
             inputs_embeds = self.word_embeddings(input_ids)
         token_type_embeddings = self.token_type_embeddings(token_type_ids)
 
-        if entity_ids is None:
-            entity_ids = self.make_entity_ids(input_ids)
+        entity_ids = self.make_entity_ids(input_ids)
         entity_embeddings = self.entity_embeddings(entity_ids)
 
         embeddings = inputs_embeds + token_type_embeddings
         if self.position_embedding_type == "absolute":
             position_embeddings = self.position_embeddings(position_ids)
             embeddings += position_embeddings
-        embeddings += + entity_embeddings
+        embeddings += entity_embeddings
         embeddings = self.LayerNorm(embeddings)
         embeddings = self.dropout(embeddings)
         return embeddings
