@@ -6,6 +6,21 @@ from ..utils import (
     LOSS_MAP,
 )
 
+class DefaultTrainer(Trainer):
+    def compute_loss(self, model, inputs, return_outputs=False):
+        labels = inputs.pop("labels")
+        outputs = model(**inputs)
+        logits = outputs.logits
+        
+        if self.args.loss == "weight":
+            criterion = LOSS_MAP[self.args.loss](self.train_dataset['label'])
+        else:
+            criterion = LOSS_MAP[self.args.loss]()
+        
+        loss = criterion(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+        
+        return (loss, outputs) if return_outputs else loss
+    
 class BalancedSamplerTrainer(Trainer):
     def get_train_dataloader(self) -> DataLoader:
         """
