@@ -22,3 +22,7 @@ class DataArguments:
     max_length: int = field(
         default=256, metadata={"help": "max token length"},
     )
+    augment: str = field(
+        default="original", metadata={"help": ""},
+    )
+    

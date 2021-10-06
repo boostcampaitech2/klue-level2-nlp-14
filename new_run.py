@@ -10,7 +10,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 
-from datasets import load_dataset
+from datasets import load_dataset, concatenate_datasets
 
 import transformers
 from transformers import (
@@ -75,7 +75,7 @@ def main():
         script_version=data_args.revision, 
         cache_dir=data_args.data_cache_dir,
     )
-    
+
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path)
     tokenizer.add_special_tokens(
@@ -126,12 +126,15 @@ def main():
         wandb.login()
     
     # TODO datasetdict가 아닌 경우 처리
-    train_dataset = tokenized_datasets["train"]
+    if data_args.augment != 'original':
+        train_dataset = concatenate_datasets([tokenized_datasets['train'], tokenized_datasets[data_args.augment]])
+    else:
+        train_dataset = tokenized_datasets["train"]
     try:
         eval_dataset = tokenized_datasets["valid"]
     except KeyError:
         eval_dataset = None
-
+    
     trainer = Trainer(
         args=training_args,
         model_init=model_init,
