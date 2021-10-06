@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse
 
 from functools import partial
 from typing import Tuple, List, Any, Dict
@@ -24,13 +25,17 @@ from transformers.configuration_utils import PretrainedConfig
 from solution.args import (
     HfArgumentParser,
     DataArguments,
-    TrainingArguments,
+    NewTrainingArguments,
     ModelingArguments,
     ProjectArguments,
 )
 from solution.data import (
     COLLATOR_MAP,
     PREP_PIPELINE,
+    kfold_split,
+)
+from solution.trainers import (
+    TRAINER_MAP,
 )
 from solution.utils import (
     softmax,
@@ -43,18 +48,18 @@ from solution.utils import (
 import solution.models as models
 
 
-def main():
+def main(command_args):
     parser = HfArgumentParser(
         (DataArguments,
-         TrainingArguments,
+         NewTrainingArguments,
          ModelingArguments,
          ProjectArguments,)
     )
-    if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
+    if command_args.config.endswith(".json"):
         # read args from json file
-        args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
-    elif len(sys.argv) == 2 and sys.argv[1].endswith(".yaml"):
-        args = parser.parse_yaml_file(yaml_file=os.path.abspath(sys.argv[1]))
+        args = parser.parse_json_file(json_file=os.path.abspath(command_args.config))
+    elif command_args.config.endswith(".yaml"):
+        args = parser.parse_yaml_file(yaml_file=os.path.abspath(command_args.config))
     else:
         # read args from shell script or real arguments
         args = parser.parse_args_into_dataclasses()
@@ -125,17 +130,28 @@ def main():
         import wandb
         wandb.login()
     
-    # TODO datasetdict가 아닌 경우 처리
+    # augmentation dataset 선택 및 결합
     if data_args.augment != 'original':
         train_dataset = concatenate_datasets([tokenized_datasets['train'], tokenized_datasets[data_args.augment]])
     else:
         train_dataset = tokenized_datasets["train"]
+
+    # TODO datasetdict가 아닌 경우 처리
     try:
         eval_dataset = tokenized_datasets["valid"]
     except KeyError:
         eval_dataset = None
-    
-    trainer = Trainer(
+
+    # train/valid split
+    if command_args.fold > 0:
+        # kfold
+        train_dataset, eval_dataset = kfold_split(train_dataset, n_splits=5, fold=command_args.fold, random_state=training_args.seed)
+        training_args.run_name = training_args.run_name + f"_fold{command_args.fold}"
+        training_args.output_dir = training_args.output_dir + f"/fold{command_args.fold}"
+        project_args.save_model_dir = project_args.save_model_dir + f"/fold{command_args.fold}"
+
+    trainer_class = TRAINER_MAP[training_args.trainer_class]
+    trainer = trainer_class(
         args=training_args,
         model_init=model_init,
         train_dataset=train_dataset,
@@ -143,7 +159,7 @@ def main():
         data_collator=data_collator,
         compute_metrics=compute_metrics,
     )
-    
+
     # Training
     if training_args.do_train:
         trainer.train()
@@ -197,4 +213,10 @@ def main():
         
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--fold', type=int, default=0, help='k-fold fold num: 1~5 & no k-fold: 0 (default)')
+    parser.add_argument('--config', type=str, default="config/kfold.yaml", help='config file path (default: config/kfold.yaml)')
+    command_args = parser.parse_args()
+    print(command_args)
+
+    main(command_args)
