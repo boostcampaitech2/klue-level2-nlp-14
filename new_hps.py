@@ -15,7 +15,7 @@ from transformers import AutoConfig, \
 from solution.args import (
     HfArgumentParser,
     DataArguments,
-    TrainingArguments,
+    NewTrainingArguments,
     ModelingArguments,
     ProjectArguments,
     HPSearchArguments
@@ -24,6 +24,9 @@ from solution.data import (
     COLLATOR_MAP,
     mark_entity_spans as _mark_entity_spans,
     convert_example_to_features as _convert_example_to_features,
+)
+from solution.trainers import (
+    TRAINER_MAP,
 )
 from solution.utils import (
     set_seeds,
@@ -178,7 +181,8 @@ def tune_transformer(num_samples=8, gpus_per_trial=0, smoke_test=False, args=Non
     # https://stackoverflow.com/questions/68787955/cant-pickle-thread-rlock-objects-when-using-huggingface-trainer-with-ray-tun
 
     # Setting Trainer, Resize the train set for the faster search
-    trainer = Trainer(
+    trainer_class = TRAINER_MAP[training_args.trainer_class]
+    trainer = trainer_class(
         args=training_args,
         model_init=model_init,
         train_dataset=train_dataset,
@@ -307,7 +311,7 @@ if __name__ == "__main__":
     '''
     parser = HfArgumentParser(
         (DataArguments,
-         TrainingArguments,
+         NewTrainingArguments,
          ModelingArguments,
          ProjectArguments,
          HPSearchArguments)

@@ -24,13 +24,16 @@ from transformers.configuration_utils import PretrainedConfig
 from solution.args import (
     HfArgumentParser,
     DataArguments,
-    TrainingArguments,
+    NewTrainingArguments,
     ModelingArguments,
     ProjectArguments,
 )
 from solution.data import (
     COLLATOR_MAP,
     PREP_PIPELINE,
+)
+from solution.trainers import (
+    TRAINER_MAP,
 )
 from solution.utils import (
     softmax,
@@ -46,7 +49,7 @@ import solution.models as models
 def main():
     parser = HfArgumentParser(
         (DataArguments,
-         TrainingArguments,
+         NewTrainingArguments,
          ModelingArguments,
          ProjectArguments,)
     )
@@ -132,7 +135,8 @@ def main():
     except KeyError:
         eval_dataset = None
 
-    trainer = Trainer(
+    trainer_class = TRAINER_MAP[training_args.trainer_class]
+    trainer = trainer_class(
         args=training_args,
         model_init=model_init,
         train_dataset=train_dataset,
