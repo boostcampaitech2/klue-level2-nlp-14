@@ -1,10 +1,11 @@
 from transformers import Trainer
 from .sampler import (
     BalancedSamplerTrainer,
+    DefaultTrainer,
 )
 
 
 TRAINER_MAP = {
-    "default": Trainer,
+    "default": DefaultTrainer,
     "balanced": BalancedSamplerTrainer,
 }
