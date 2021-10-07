@@ -1,7 +1,7 @@
 # Data Arguments
 DataArguments:
   name: jinmang2/load_klue_re
-  revision: v1.0.0
+  revision: v2.0.0
   data_cache_dir: cache
   collator_name: mlm
 
@@ -9,28 +9,27 @@ DataArguments:
 TrainingArguments:
   seed: 42
   report_to: wandb
-  run_name: test_tapt
+  run_name: roberta_large_tapt
   output_dir: output
   learning_rate: 3e-5
   do_train: True
-  do_eval: False
-  do_predict: False
-  # evaluation_strategy: epoch
-  # save_strategy: epoch
+  do_eval: True
+  do_predict: True
+  evaluation_strategy: epoch
+  save_strategy: epoch
   per_device_train_batch_size: 32
   per_device_eval_batch_size: 32
-  num_train_epochs: 10.0
+  num_train_epochs: 4
   # eval_steps: 100
-  save_steps: 100
+  # save_steps: 100
   logging_steps: 100
-  save_total_limit: 5
+  save_total_limit: 3
   fp16: True
   weight_decay: 0.01
-  warmup_steps: 2000
-  # load_best_model_at_end: True
-  # metric_for_best_model: micro_f1
+  warmup_ratio: 0.2
+  load_best_model_at_end: True
+  metric_for_best_model: micro_f1
   logging_dir: logs
-  logging_first_step: True
   lr_scheduler_type: linear
 
 # Model Arguments
@@ -42,7 +41,7 @@ ModelingArguments:
 # Project Arguments
 ProjectArguments:
   task: tapt
-  wandb_project: klue_re
-  save_model_dir: tapt_roberta_0930
+  wandb_project: klue_re_kfold_hrlee
+  save_model_dir: best
   submit_dir: prediction
   checkpoint: None
