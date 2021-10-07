@@ -19,3 +19,6 @@ class ProjectArguments:
     checkpoint: str = field(
         default=None, metadata={"help": ""},
     )
+    do_analysis: bool = field(
+        default=False, metadata={"help": ""},
+    )
