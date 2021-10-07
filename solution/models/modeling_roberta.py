@@ -20,15 +20,15 @@ class ClassificationLinearHead(nn.Module):
     ):
         super().__init__()
         self.activation = getattr(torch, act_type)
-        self.dense = nn.Linear(hid_dim, hid_dim)
+        self.dense = nn.Linear(hid_dim, hid_dim * 4)
         self.dropout = nn.Dropout(classifier_dropout)
-        self.out_proj = nn.Linear(hid_dim, num_labels)
+        self.out_proj = nn.Linear(hid_dim * 4, num_labels)
         
     def forward(self, features, **kwargs):
         x = features[:, 0, :] # take <s> token (equiv. to [CLS])
         x = self.dropout(x)
         x = self.dense(x)
-        x = self.actication(x)
+        x = self.activation(x)
         x = self.dropout(x)
         x = self.out_proj(x)
         return x

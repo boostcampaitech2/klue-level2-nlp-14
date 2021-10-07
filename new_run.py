@@ -10,7 +10,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 
-from datasets import load_dataset
+from datasets import load_dataset, concatenate_datasets
 
 import transformers
 from transformers import (
@@ -143,10 +143,23 @@ def main():
     except KeyError:
         eval_dataset = None
         
+    if project_args == "tapt":
+        test_dataset = load_dataset(data_args.name, 
+                                    script_version=data_args.revision, 
+                                    cache_dir=data_args.data_cache_dir,
+                                    split="test",)
+        test_dataset = prep_pipeline(test_dataset,
+                                     tokenizer,
+                                     task_infos,
+                                     mode="train",)
+        train_dataset = concatenate_datasets([train_dataset, test_dataset])
+        eval_dataset = None
+        
     # =============================================================
-    train_dataset = train_dataset.select([i for i in range(1000)])
-    if eval_dataset is not None:
-        eval_dataset = eval_dataset.select([i for i in range(500)])
+    # Smoke test
+    # train_dataset = train_dataset.select([i for i in range(1000)])
+    # if eval_dataset is not None:
+    #     eval_dataset = eval_dataset.select([i for i in range(500)])
     # =============================================================
 
     trainer = Trainer(
@@ -162,10 +175,11 @@ def main():
     # Training
     if training_args.do_train:
         trainer.train()
-        trainer.model.save_pretrained(project_args.save_model_dir)
         checkpoint = project_args.save_model_dir
+        trainer.model.save_pretrained(checkpoint)
+        tokenizer.save_pretrained(checkpoint)
     
-    if training_args.do_predict:
+    if training_args.do_predict and not project_args.task == "tapt":
         # Load Checkpoint
         ckpt_config_file = os.path.join(checkpoint, CONFIG_FILE_NAME)
         ckpt_model_file = os.path.join(checkpoint, PYTORCH_MODEL_NAME)
@@ -183,17 +197,27 @@ def main():
             cache_dir=data_args.data_cache_dir,
             split="test",
         )
+        test_id = test_dataset["guid"]
         tokenized_test_datasets = prep_pipeline(test_dataset,
                                                 tokenizer,
                                                 task_infos,
                                                 mode="test",)
         
         infer_pipeline = INFERENCE_PIPELINE[project_args.infer_pipeline_name]
-        infer_pipeline(tokenized_test_datasets,
-                       trainer=trainer,
-                       task_infos=task_infos,
-                       training_args=training_args
-                      )
+        probs, pred_answer = infer_pipeline(tokenized_test_datasets,
+                                            trainer=trainer,
+                                            task_infos=task_infos,
+                                            training_args=training_args,)
+        output = pd.DataFrame(
+            {
+                'id':test_id,
+                'pred_label':pred_answer,
+                'probs':probs,
+            }
+        )
+        submir_dir = training_args.output_dir
+        run_name = training_args.run_name
+        output.to_csv(f'{submir_dir}/submission_{run_name}.csv', index=False)
     print('---- Finish! ----')
         
 
