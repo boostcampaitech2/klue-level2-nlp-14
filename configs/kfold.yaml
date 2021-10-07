@@ -24,7 +24,7 @@ TrainingArguments:
   num_train_epochs: 4
   # eval_steps: 100
   # save_steps: 100
-  save_total_limit: 5
+  save_total_limit: 1
   fp16: True
   weight_decay: 0.0
   warmup_ratio: 0.0
