@@ -1,7 +1,7 @@
 from transformers import Trainer
 import datasets
 from torch.utils.data import DataLoader
-from torchsampler import ImbalancedDatasetSampler # pip install https://github.com/ufoym/imbalanced-dataset-sampler/archive/master.zip
+# from torchsampler import ImbalancedDatasetSampler # pip install https://github.com/ufoym/imbalanced-dataset-sampler/archive/master.zip
 from ..utils import ( 
     LOSS_MAP,
 )

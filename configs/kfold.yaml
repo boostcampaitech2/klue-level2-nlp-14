@@ -11,7 +11,7 @@ TrainingArguments:
   loss: focal
   trainer_class: custom
   report_to: wandb
-  run_name: 1007_klue_roberta_lstm_aug_3000_kfold
+  run_name: bert_all
   output_dir: output
   learning_rate: 3e-5
   do_train: True
@@ -19,14 +19,14 @@ TrainingArguments:
   do_predict: True
   evaluation_strategy: epoch
   save_strategy: epoch
-  per_device_train_batch_size: 32
-  per_device_eval_batch_size: 32
-  num_train_epochs: 4
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 16
+  num_train_epochs: 3
   # eval_steps: 100
   # save_steps: 100
   save_total_limit: 5
   fp16: True
-  weight_decay: 0.0
+  weight_decay: 0.01
   warmup_ratio: 0.0
   load_best_model_at_end: True
   metric_for_best_model: micro_f1
@@ -35,14 +35,16 @@ TrainingArguments:
 
 # Model Arguments
 ModelingArguments:
-  architectures: RobertaForSequenceClassificationLstm
-  model_name_or_path: jinmang2/roberta-large-re-tapt-20300
+  # architectures: RobertaForSequenceClassificationLstm
+  architectures: Entity_layer_BertForSequenceClassification
+  # model_name_or_path: jinmang2/roberta-large-re-tapt-20300
+  model_name_or_path: klue/bert-base
   model_cache_dir: cache
 
 # Project Arguments
 ProjectArguments:
   task: klue_re
-  wandb_project: klue_re_klue_roberta_taeuk
-  save_model_dir: best_models/1007_klue_roberta_lstm_aug_3000_kfold
+  wandb_project: klue_re_bert_entity_embedding
+  save_model_dir: best_models/bert_all
   submit_dir: prediction
   checkpoint: None
