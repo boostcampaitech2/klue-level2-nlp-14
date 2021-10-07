@@ -3,8 +3,8 @@ import random
 import numpy as np
 import torch
 
-from .file_utils import TASK_INFOS_MAP, CONFIG_FILE_NAME, PYTORCH_MODEL_NAME
-from .metrics import TASK_METRIC_MAP
+from .file_utils import TASK_INFOS_MAP, CONFIG_FILE_NAME, PYTORCH_MODEL_NAME, RELATION_CLASS
+from .metrics import TASK_METRIC_MAP, get_confusion_matrix
 from .loss import (
     DiceLoss, 
     FocalLoss, 

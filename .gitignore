@@ -157,6 +157,7 @@ dmypy.json
 /klue_dir
 /results
 /wandb
+/analysis
 /.git
 
 # Results
