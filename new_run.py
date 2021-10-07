@@ -24,7 +24,7 @@ from transformers.configuration_utils import PretrainedConfig
 from solution.args import (
     HfArgumentParser,
     DataArguments,
-    TrainingArguments,
+    NewTrainingArguments,
     ModelingArguments,
     ProjectArguments,
 )
@@ -34,6 +34,9 @@ from solution.data import (
 )
 from solution.models import (
     MODEL_INIT_FUNC,
+)
+from solution.trainers import (
+    TRAINER_MAP,
 )
 from solution.utils import (
     softmax,
@@ -54,7 +57,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 def main():
     parser = HfArgumentParser(
         (DataArguments,
-         TrainingArguments,
+         NewTrainingArguments,
          ModelingArguments,
          ProjectArguments,)
     )
@@ -162,8 +165,13 @@ def main():
     #     eval_dataset = eval_dataset.select([i for i in range(500)])
     # =============================================================
 
+<<<<<<< HEAD
     trainer = Trainer(
         model=model_init(),
+=======
+    trainer_class = TRAINER_MAP[training_args.trainer_class]
+    trainer = trainer_class(
+>>>>>>> edc6c0fcc60fecf18aac5318772a4654d2cdf616
         args=training_args,
         # model_init=model_init,
         train_dataset=train_dataset,
