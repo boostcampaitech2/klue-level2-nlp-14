@@ -7,7 +7,7 @@ from functools import partial
 
 import torch
 
-from datasets import load_dataset
+from datasets import load_dataset, concatenate_datasets
 
 from transformers import AutoConfig, \
     AutoModelForSequenceClassification, AutoTokenizer, Trainer, TrainingArguments
@@ -80,11 +80,10 @@ def tune_transformer(num_samples=8, gpus_per_trial=0, smoke_test=False, args=Non
     model_name = model_args.model_name_or_path
 
     # Get training data
-    dataset = load_dataset(
-        data_args.name, 
-        script_version=data_args.revision, 
-        cache_dir=cache_dir,
-    )
+    train = load_dataset("jinmang2/load_klue_re", script_version="v3.0.0b", split='train')
+    aug1  = load_dataset("jinmang2/load_klue_re", script_version="v3.0.0b", split='aug1')
+    valid = load_dataset("jinmang2/load_klue_re", script_version="v3.0.0b", split='valid')
+    dataset = concatenate_datasets([train, aug1])
     
     # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path)
@@ -104,21 +103,23 @@ def tune_transformer(num_samples=8, gpus_per_trial=0, smoke_test=False, args=Non
     
     examples = dataset.map(mark_entity_spans)
     tokenized_datasets = examples.map(convert_example_to_features)
+    valid_examples = valid.map(mark_entity_spans)
+    valid_tokenized_datasets = valid_examples.map(convert_example_to_features)
     
     # remove unused feature names
-    features_name = list(tokenized_datasets["train"].features.keys())
-    features_name.pop(features_name.index("input_ids"))
-    features_name.pop(features_name.index("label"))
-    tokenized_datasets = tokenized_datasets.remove_columns(features_name)
+    #features_name = list(tokenized_datasets.features.keys())
+    #features_name.pop(features_name.index("input_ids"))
+    #features_name.pop(features_name.index("label"))
+    #tokenized_datasets = tokenized_datasets.remove_columns(features_name)
 
-    train_dataset = tokenized_datasets["train"]
-    eval_dataset = None
-    if training_args.do_eval:
-        try:
-            eval_dataset = tokenized_datasets["valid"]
-        except KeyError:
-            print("Dataset Version Error")
-            return None
+    train_dataset = tokenized_datasets
+    eval_dataset = valid_tokenized_datasets
+    #if training_args.do_eval:
+    #    try:
+    #        eval_dataset = tokenized_datasets["valid"]
+    #    except KeyError:
+    #        print("Dataset Version Error")
+    #        return None
 
     # Triggers model saved to MODEL_DIR
     ## (to avoid the issue of the token embedding layer size)
