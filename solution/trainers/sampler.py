@@ -5,6 +5,7 @@ from torchsampler import ImbalancedDatasetSampler # pip install https://github.c
 
 
 class BalancedSamplerTrainer(Trainer):
+    """ Trainer with the balanced sampler """
     def get_train_dataloader(self) -> DataLoader:
         """
         Returns the training :class:`~torch.utils.data.DataLoader`.

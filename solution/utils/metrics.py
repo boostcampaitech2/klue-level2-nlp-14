@@ -30,6 +30,7 @@ def compute_auprc(probs, labels):
 
 
 def get_confusion_matrix(logits, labels):
+    """ Compute and Draw the Confusion Matrix """
     preds = np.argmax(logits, axis=1).ravel()
     cm = confusion_matrix(labels, preds)
     norm_cm = cm / np.sum(cm, axis=1)[:,None]
@@ -40,6 +41,7 @@ def get_confusion_matrix(logits, labels):
 
 
 def compute_klue_re_leaderboard(eval_pred):
+    """ Compute the KLUE-RE leaderboard metrics """
     # Parsing predictions and labels
     preds, labels = eval_pred
     # Preprocess no_relation for micro F1

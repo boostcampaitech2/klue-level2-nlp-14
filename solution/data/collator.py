@@ -3,7 +3,11 @@ from .mlm import mask_tokens
 
 
 class DefaultDataCollator:
-    
+    """ Default Data Collator
+    Attributes:
+        tokenizer:  Tokenizer for text tokenization.
+        max_length: The maximum length of the sequence.
+    """
     def __init__(self, tokenizer, max_length=None):
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -28,6 +32,12 @@ class DefaultDataCollator:
     
     
 class MLMDataCollator:
+    """ Data Collator for MLM(Masked Language Model)
+    Attributes:
+        tokenizer:  Tokenizer for text tokenization.
+        max_length: The maximum length of the sequence.
+        mlm_prob:   The ratio of mask tokens.
+    """
     def __init__(self, tokenizer, max_length=512, mlm_prob=0.15):
         self.tokenizer = tokenizer
         self.max_length = max_length
