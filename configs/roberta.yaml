@@ -1,14 +1,14 @@
 # Data Arguments
 DataArguments:
   name: jinmang2/load_klue_re
-  revision: v1.0.0
+  revision: v1.0.1b
   data_cache_dir: cache
   collator_name: default
 
 # TrainingArguments
 TrainingArguments:
   report_to: wandb
-  run_name: ds_roberta
+  run_name: test
   output_dir: output
   learning_rate: 3e-5
   do_train: True
@@ -16,8 +16,8 @@ TrainingArguments:
   do_predict: True
   evaluation_strategy: epoch
   save_strategy: epoch
-  per_device_train_batch_size: 64
-  per_device_eval_batch_size: 64
+  per_device_train_batch_size: 32
+  per_device_eval_batch_size: 32
   num_train_epochs: 1
   # eval_steps: 100
   # save_steps: 100
@@ -28,8 +28,7 @@ TrainingArguments:
   load_best_model_at_end: True
   metric_for_best_model: micro_f1
   logging_dir: logs
-  # lr_scheduler_type: linear
-  deepspeed: configs/ds_config.json
+  lr_scheduler_type: linear
 
 # Model Arguments
 ModelingArguments:

@@ -6,6 +6,7 @@ from transformers import PreTrainedModel, RobertaPreTrainedModel, RobertaModel
 import torch
 import torch.nn as nn
 
+
 class XLMRobertaForSequenceClassificationLstm(RobertaPreTrainedModel):
     _keys_to_ignore_on_load_missing = [r"position_ids"]
 
@@ -53,14 +54,14 @@ class XLMRobertaForSequenceClassificationLstm(RobertaPreTrainedModel):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
         )
-        
+
         sequence_output = outputs[0]
-        
+
         enc_hiddens, (last_hidden, last_cell) = self.lstm(sequence_output)
         output_hidden = torch.cat((last_hidden[0], last_hidden[1]), dim = 1)
 
         logits = self.dense_layer(output_hidden)
-        
+
 #         logits = self.classifier(sequence_output)
         loss = None
         if labels is not None:
@@ -81,7 +82,7 @@ class XLMRobertaForSequenceClassificationLstm(RobertaPreTrainedModel):
             elif self.config.problem_type == "single_label_classification":
                 loss_fct = CrossEntropyLoss()
                 loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
-            elif self.config.problem_type == "multi_label_classification": 
+            elif self.config.problem_type == "multi_label_classification":
                 loss_fct = BCEWithLogitsLoss()
                 loss = loss_fct(logits, labels)
 

@@ -8,7 +8,7 @@ def basic_inference(test_dataset, trainer, task_infos, training_args):
     probs = softmax(logits).tolist()
     result = np.argmax(logits, axis=-1).tolist()
     pred_answer = [task_infos.id2label[v] for v in result]
-    
+
     return probs, pred_answer
 
 INFERENCE_PIPELINE = {
