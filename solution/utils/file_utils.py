@@ -5,7 +5,7 @@ SUBJECT_ENTITIES = ['PER', 'ORG']
 OBJECT_ENTITIES = ['PER', 'ORG', 'LOC', 'DAT', 'POH', 'NOH']
 
 RELATION_CLASS = [
-    'no_relation', 
+    'no_relation',
     'org:top_members/employees',
     'org:members',
     'org:product',
@@ -16,11 +16,11 @@ RELATION_CLASS = [
     'per:product',
     'org:number_of_employees/members',
     'per:children',
-    'per:place_of_residence', 
+    'per:place_of_residence',
     'per:alternate_names',
     'per:other_family',
     'per:colleagues',
-    'per:origin', 
+    'per:origin',
     'per:siblings',
     'per:spouse',
     'org:founded',
@@ -29,14 +29,14 @@ RELATION_CLASS = [
     'per:parents',
     'org:dissolved',
     'per:schools_attended',
-    'per:date_of_death', 
+    'per:date_of_death',
     'per:date_of_birth',
     'per:place_of_birth',
     'per:place_of_death',
     'org:founded_by',
     'per:religion'
 ]
-       
+
 NUM_CLASSES = len(RELATION_CLASS)
 IDX2LABEL = {idx: label for idx, label in enumerate(RELATION_CLASS)}
 LABEL2IDX = {label: idx for idx, label in enumerate(RELATION_CLASS)}
@@ -75,7 +75,7 @@ class TAPT:
     num_labels = 2 # set default
     markers = MARKERS
 
-    
+
 class KLUE_RE:
     label = RELATION_CLASS
     subject_entity = SUBJECT_ENTITIES
@@ -84,8 +84,8 @@ class KLUE_RE:
     label2id = {label: idx for idx, label in enumerate(RELATION_CLASS)}
     num_labels = NUM_CLASSES
     markers = MARKERS
-    
-    
+
+
 class KLUE_RE_TYPE(KLUE_RE):
     markers = TYPE_MARKERS
 
@@ -94,4 +94,5 @@ TASK_INFOS_MAP = {
     "klue_re": KLUE_RE,
     "tapt": TAPT,
     "klue_re_type": KLUE_RE_TYPE,
+    "klue_re_entity_embedding": KLUE_RE,
 }

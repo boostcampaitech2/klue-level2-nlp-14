@@ -1,25 +1,25 @@
 # Data Arguments
 DataArguments:
   name: jinmang2/load_klue_re
-  revision: v1.0.1b
+  revision: v3.0.1b
   data_cache_dir: cache
   collator_name: default
 
 # TrainingArguments
 TrainingArguments:
-  report_to: none
-  run_name: hps_test
+  report_to: wandb  #wandb report
+  run_name: typetagging_bert_v301b
   output_dir: output
   learning_rate: 3e-5
   do_train: True
   do_eval: True
-  do_predict: False
+  do_predict: True
   evaluation_strategy: epoch
   # save_strategy: epoch
-  per_device_train_batch_size: 32
-  per_device_eval_batch_size: 32
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 16
   overwrite_output_dir: True
-  # num_train_epochs: 1
+  num_train_epochs: 3
   # eval_steps: 100
   # save_steps: 100
   save_total_limit: 1
@@ -37,14 +37,16 @@ TrainingArguments:
 
 # Model Arguments
 ModelingArguments:
-  architectures: AutoModelForSequenceClassification
-  model_name_or_path: klue/roberta-large
+  architectures: Entity_layer_BertForSequenceClassification
+  # architectures: AutoModelForSequenceClassification
+  # model_name_or_path: klue/roberta-large
+  model_name_or_path: klue/bert-base
   model_cache_dir: cache
 
 # Project Arguments
 ProjectArguments:
   task: klue_re
-  wandb_project: klue_re
+  wandb_project: klue_re_bert_entity_embedding
   save_model_dir: best
   submit_dir: prediction
   checkpoint: None

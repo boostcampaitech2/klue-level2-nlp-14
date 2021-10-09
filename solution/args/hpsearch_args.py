@@ -11,7 +11,7 @@ class HPSearchArguments:
     )
     ray_address: str = field(
         default=None, metadata={"help": "Address to use for Ray. "
-                                      "Use 'auto' for cluster. "      
+                                      "Use 'auto' for cluster. "
                                       "Defaults to None for local."},
     )
     server_address: str = field(

@@ -11,11 +11,11 @@ from .file_utils import RELATION_CLASS
 def compute_micro_f1(logits, labels, label_indices=None):
     """ Compute Micro F1 score for specific labels """
     predictions = np.argmax(logits, axis=1).ravel()
-    micro_f1 = f1_score(labels, predictions, 
+    micro_f1 = f1_score(labels, predictions,
                         average="micro", labels=label_indices)
     return micro_f1
 
-    
+
 def compute_auprc(probs, labels):
     """ Compute Area Under the Precision-Recall Curve """
     onehots = np.eye(N_CLASSES)[labels]
@@ -37,8 +37,8 @@ def get_confusion_matrix(logits, labels):
     fig = plt.figure(figsize=(12,9))
     sns.heatmap(cm, annot=True)
     return fig
-
-
+  
+  
 def compute_klue_re_leaderboard(eval_pred):
     # Parsing predictions and labels
     preds, labels = eval_pred
@@ -68,4 +68,5 @@ TASK_METRIC_MAP = {
     "klue_re": compute_klue_re_leaderboard,
     "tapt": None,
     "klue_re_type": compute_klue_re_leaderboard,
+    "klue_re_entity_embedding": compute_klue_re_leaderboard,
 }
