@@ -34,7 +34,7 @@ from solution.data import (
     COLLATOR_MAP,
     PREPROCESSING_PIPELINE,
     kfold_split,
-  
+
 from solution.models import (
     MODEL_INIT_FUNC,
 )
@@ -99,7 +99,7 @@ def main(command_args):
     collate_cls = COLLATOR_MAP[data_args.collator_name]
     prep_pipeline = PREPROCESSING_PIPELINE[data_args.prep_pipeline_name]
     data_collator = collate_cls(tokenizer, max_length=data_args.max_length)
-  
+
     # Preprocess and tokenizing
     tokenized_datasets = prep_pipeline(dataset,
                                        tokenizer,
@@ -142,7 +142,7 @@ def main(command_args):
     if call_wandb:
         import wandb
         wandb.login()
-    
+
     # augmentation dataset 선택 및 결합
     if data_args.augment != 'original':
         train_dataset = concatenate_datasets([tokenized_datasets['train'], tokenized_datasets[data_args.augment]])
@@ -155,6 +155,18 @@ def main(command_args):
     except KeyError:
         eval_dataset = None
 
+    if project_args == "tapt":
+        test_dataset = load_dataset(data_args.name,
+                                    script_version=data_args.revision,
+                                    cache_dir=data_args.data_cache_dir,
+                                    split="test",)
+        test_dataset = prep_pipeline(test_dataset,
+                                     tokenizer,
+                                     task_infos,
+                                     mode="train",)
+        train_dataset = concatenate_datasets([train_dataset, test_dataset])
+        eval_dataset = None
+
     # train/valid split
     if command_args.fold > 0:
         # kfold
@@ -162,6 +174,13 @@ def main(command_args):
         training_args.run_name = training_args.run_name + f"_fold{command_args.fold}"
         training_args.output_dir = training_args.output_dir + f"/fold{command_args.fold}"
         project_args.save_model_dir = project_args.save_model_dir + f"/fold{command_args.fold}"
+
+    # =============================================================
+    # Smoke test
+    # train_dataset = train_dataset.select([i for i in range(1000)])
+    # if eval_dataset is not None:
+    #     eval_dataset = eval_dataset.select([i for i in range(500)])
+    # =============================================================
 
     trainer_class = TRAINER_MAP[training_args.trainer_class]
     trainer = trainer_class(
@@ -227,8 +246,8 @@ def main(command_args):
 
         # Load & Preprocess the Dataset(for all samples of train dataset)
         train_dataset = load_dataset(
-            data_args.name, 
-            script_version=data_args.revision, 
+            data_args.name,
+            script_version=data_args.revision,
             cache_dir=data_args.data_cache_dir,
             split="train",
         )
@@ -254,16 +273,16 @@ def main(command_args):
         if (os.path.isdir(analysis_dir) == False):
             os.makedirs(analysis_dir)
 
-        # Inference 
+        # Inference
         output_logit = []
         output_prob = []
         output_pred = []
 
         batch_size=training_args.per_device_train_batch_size
         embeddings = np.zeros((len(tokenized_train_datasets), model.config.hidden_size), dtype=np.float32)
-        
+
         for i, data in enumerate(tqdm(train_dataloader)):
-        
+
             with torch.no_grad():
                 outputs = model(
                         input_ids=data['input_ids'].to(device),
@@ -281,15 +300,15 @@ def main(command_args):
             prob = nn.functional.softmax(logits, dim=-1).detach().cpu().numpy()
             logits = logits.detach().cpu().numpy()
             result = np.argmax(logits, axis=-1)
-            
+
             output_logit.append(logits)
             output_pred.append(result)
             output_prob.append(prob)
-        
+
         # Save Embeddings
         np.save(os.path.join(analysis_dir, f'embeddings.npy'), embeddings)
         print('Embedding vectors saved in ' , os.path.join(analysis_dir, f'embeddings.npy'))
-        
+
         # Save Confusion Matrix & Dataframe
         pred_answer = np.concatenate(output_pred).tolist()
         output_prob = np.concatenate(output_prob, axis=0).tolist()

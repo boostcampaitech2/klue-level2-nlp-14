@@ -1,8 +1,10 @@
 import os
 import json
-from typing import List, Tuple, Dict, Anys
+from typing import List, Tuple, Dict, Any, Union
 from kss import split_sentences
 import numpy as np
+import torch
+
 from .bpetokenizer import KoBpeTokenizer
 from .modeling_roberta import RobertaForCharNER
 
@@ -28,7 +30,7 @@ NER_FILES = {
 class NERInterface:
     
     @classmethod
-    def from_pretrained(cls, lang="ko", device="cuda"):
+    def from_pretrained(cls, lang="ko", device="cpu"):
         filenames = NER_FILES[lang]
         path = "/".join(__file__.split("/")[:-1])
         wsd = filenames.pop("wsd", None)
@@ -36,7 +38,7 @@ class NERInterface:
         if wsd is not None:
             wsd_dict = json.load(open(os.path.join(path, wsd), "r"))
         vocab_file = filenames.pop("vocab", None)
-        vocab = None
+        tokenizer = None
         if vocab_file is not None:
             tokenizer = KoBpeTokenizer.from_file(os.path.join(path, vocab_file))
         label_file = filenames.pop("label", None)
@@ -64,10 +66,12 @@ class NERInterface:
         charbpe,
         label,
         wsd_dict,
+        device,
     ):
         self._model = model
         self._sent_tokenizer = split_sentences
         self.bpe = charbpe
+        self._device = device
         self._label = label
         self._tags = {
             "PS": "PERSON",
@@ -103,7 +107,7 @@ class NERInterface:
     def _prepare_inputs(self, inputs: Dict[str, Union[torch.Tensor, Any]]) -> Dict[str, Union[torch.Tensor, Any]]:
         for k, v in inputs.items():
             if isinstance(v, torch.Tensor):
-                kwargs = dict(device=self.device)
+                kwargs = dict(device=self._device)
                 inputs[k] = v.to(**kwargs)
                 
         return inputs
@@ -218,7 +222,7 @@ class NERInterface:
         )
         input_ids = self._prepare_inputs({"input_ids": input_ids})
         # predict tags
-        logits = self._model(input_ids).logits
+        logits = self._model(**input_ids).logits
         results = logits[:, 1:-1:, :].argmax(dim=-1).cpu().numpy()
         
         labelmap = lambda x: self.id2label[x + self.bpe.nspecial]

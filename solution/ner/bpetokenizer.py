@@ -67,7 +67,7 @@ class KoBpeTokenizer:
         tokenized = self.tokenize(text, add_special_tokens).split(" ")
         if return_tokens:
             return tokenized
-        return [self.vocab[token] for token in tokenized]
+        return [self.vocab.get(token, self.unk_token_id) for token in tokenized]
     
     def encode_batch(
         self, 
