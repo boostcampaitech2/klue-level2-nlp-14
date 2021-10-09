@@ -1,19 +1,19 @@
 # Data Arguments
 DataArguments:
   name: jinmang2/load_klue_re
-  revision: v1.0.1b
+  revision: v3.0.0
   data_cache_dir: cache
   collator_name: default
 
 # TrainingArguments
 TrainingArguments:
-  report_to: wandb
-  run_name: test
+  report_to: none
+  run_name: cm_test
   output_dir: output
   learning_rate: 3e-5
-  do_train: True
-  do_eval: True
-  do_predict: True
+  do_train: False
+  do_eval: False
+  do_predict: False
   evaluation_strategy: epoch
   save_strategy: epoch
   per_device_train_batch_size: 32
@@ -38,8 +38,9 @@ ModelingArguments:
 
 # Project Arguments
 ProjectArguments:
+  do_analysis: True
   task: klue_re
-  wandb_project: klue_re
+  wandb_project: klue_re_daeung
   save_model_dir: best
   submit_dir: prediction
-  checkpoint: None
+  checkpoint: /opt/ml/klue_dir/roberta-large-second
