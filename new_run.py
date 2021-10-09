@@ -1,4 +1,9 @@
 import os
+import sys
+import argparse
+
+from functools import partial
+from typing import Tuple, List, Any, Dict
 from tqdm import tqdm
 
 import numpy as np
@@ -295,4 +300,10 @@ def main(command_args):
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--fold', type=int, default=0, help='k-fold fold num: 1~5 & no k-fold: 0 (default)')
+    parser.add_argument('--config', type=str, default="config/kfold.yaml", help='config file path (default: config/kfold.yaml)')
+    command_args = parser.parse_args()
+    print(command_args)
+
+    main(command_args)
