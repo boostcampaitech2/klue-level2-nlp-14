@@ -6,7 +6,7 @@ from transformers import PreTrainedModel, RobertaPreTrainedModel, RobertaModel
 import torch
 import torch.nn as nn
 
-class RobertaForSequenceClassificationLstm(RobertaPreTrainedModel):
+class XLMRobertaForSequenceClassificationLstm(RobertaPreTrainedModel):
     _keys_to_ignore_on_load_missing = [r"position_ids"]
 
     def __init__(self, config):

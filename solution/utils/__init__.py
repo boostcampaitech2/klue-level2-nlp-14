@@ -3,9 +3,20 @@ import random
 import numpy as np
 import torch
 
-from .file_utils import TASK_INFOS_MAP, CONFIG_FILE_NAME, PYTORCH_MODEL_NAME
-from .metrics import TASK_METRIC_MAP
+from .file_utils import TASK_INFOS_MAP, CONFIG_FILE_NAME, PYTORCH_MODEL_NAME, RELATION_CLASS
+from .metrics import TASK_METRIC_MAP, get_confusion_matrix
+from .loss import (
+    DiceLoss, 
+    FocalLoss, 
+    CrossEntropyClassWeight,
+)
 
+LOSS_MAP = {
+    "default": DiceLoss,
+    "focal": FocalLoss,
+    "dice": DiceLoss,
+    "weight": CrossEntropyClassWeight,
+}
 
 def softmax(arr: np.ndarray, axis: int = -1):
     c = arr.max(axis=axis, keepdims=True)
