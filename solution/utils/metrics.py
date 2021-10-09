@@ -29,6 +29,16 @@ def compute_auprc(probs, labels):
     return auprc
 
 
+def get_confusion_matrix(logits, labels):
+    preds = np.argmax(logits, axis=1).ravel()
+    cm = confusion_matrix(labels, preds)
+    norm_cm = cm / np.sum(cm, axis=1)[:,None]
+    cm = pd.DataFrame(norm_cm, index=RELATION_CLASS, columns=RELATION_CLASS)
+    fig = plt.figure(figsize=(12,9))
+    sns.heatmap(cm, annot=True)
+    return fig
+  
+  
 def compute_klue_re_leaderboard(eval_pred):
     # Parsing predictions and labels
     preds, labels = eval_pred
@@ -40,6 +50,12 @@ def compute_klue_re_leaderboard(eval_pred):
     micro_f1 = compute_micro_f1(preds, labels, label_indices)
     # Compute AURPC
     auprc = compute_auprc(preds, labels)
+    # Compute confusion matrix
+    cm_fig = get_confusion_matrix(preds, labels)
+    try:
+        wandb.log({'confusion matrix': wandb.Image(cm_fig)})
+    except:
+        print("Warning (원래는 Error): You must call wandb.init() before wandb.log()")
     return {
         "micro_f1": micro_f1,
         "auprc": auprc,

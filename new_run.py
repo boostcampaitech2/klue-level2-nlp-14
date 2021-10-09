@@ -38,6 +38,9 @@ from solution.models import (
 from solution.trainers import (
     TRAINER_MAP,
 )
+from solution.trainers import (
+    TRAINER_MAP,
+)
 from solution.utils import (
     softmax,
     set_seeds,
@@ -148,7 +151,7 @@ def main():
 
     trainer_class = TRAINER_MAP[training_args.trainer_class]
     trainer = trainer_class(
-        model=model_init(),
+        model_init=model_init,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
