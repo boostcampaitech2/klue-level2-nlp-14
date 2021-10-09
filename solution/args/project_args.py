@@ -16,6 +16,9 @@ class ProjectArguments:
     checkpoint: str = field(
         default=None, metadata={"help": ""},
     )
+    do_analysis: bool = field(
+        default=False, metadata={"help": ""},
+    )
     infer_pipeline_name: str = field(
         default="basic", metadata={"help": ""},
     )

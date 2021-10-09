@@ -1,14 +1,17 @@
 # Data Arguments
 DataArguments:
   name: jinmang2/load_klue_re
-  revision: v1.0.1b
+  revision: v3.0.1
   data_cache_dir: cache
   collator_name: default
+  augment: aug1
 
 # TrainingArguments
 TrainingArguments:
+  loss: focal
+  trainer_class: custom
   report_to: wandb
-  run_name: test
+  run_name: 1007_klue_roberta_lstm_aug_3000_kfold
   output_dir: output
   learning_rate: 3e-5
   do_train: True
@@ -18,13 +21,13 @@ TrainingArguments:
   save_strategy: epoch
   per_device_train_batch_size: 32
   per_device_eval_batch_size: 32
-  num_train_epochs: 1
-  # eval_steps: 100
+  num_train_epochs: 4
+  # eval_steps: 100 
   # save_steps: 100
-  save_total_limit: 5
+  save_total_limit: 1
   fp16: True
-  weight_decay: 0.01
-  warmup_steps: 100
+  weight_decay: 0.0
+  warmup_ratio: 0.0
   load_best_model_at_end: True
   metric_for_best_model: micro_f1
   logging_dir: logs
@@ -32,13 +35,14 @@ TrainingArguments:
 
 # Model Arguments
 ModelingArguments:
-  architectures: AutoModelForSequenceClassification
-  model_name_or_path: klue/roberta-large
+  architectures: RobertaForSequenceClassificationLstm
+  model_name_or_path: jinmang2/roberta-large-re-tapt-20300
   model_cache_dir: cache
 
 # Project Arguments
 ProjectArguments:
   task: klue_re
-  wandb_project: klue_re
-  save_model_dir: best
+  wandb_project: klue_re_klue_roberta_taeuk
+  save_model_dir: best_models/1007_klue_roberta_lstm_aug_3000_kfold
+  submit_dir: prediction
   checkpoint: None

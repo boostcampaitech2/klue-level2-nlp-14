@@ -1,3 +1,4 @@
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -11,11 +12,11 @@ from .file_utils import RELATION_CLASS
 def compute_micro_f1(logits, labels, label_indices=None):
     """ Compute Micro F1 score for specific labels """
     predictions = np.argmax(logits, axis=1).ravel()
-    micro_f1 = f1_score(labels, predictions, 
+    micro_f1 = f1_score(labels, predictions,
                         average="micro", labels=label_indices)
     return micro_f1
 
-    
+
 def compute_auprc(probs, labels):
     """ Compute Area Under the Precision-Recall Curve """
     onehots = np.eye(N_CLASSES)[labels]
@@ -29,8 +30,8 @@ def compute_auprc(probs, labels):
     return auprc
 
 
-def get_confusion_matrix(logits, labels):
-    preds = np.argmax(logits, axis=1).ravel()
+def get_confusion_matrix(logit_or_preds, labels, is_logit=True):
+    preds = np.argmax(logit_or_preds, axis=1).ravel() if is_logit else logit_or_preds
     cm = confusion_matrix(labels, preds)
     norm_cm = cm / np.sum(cm, axis=1)[:,None]
     cm = pd.DataFrame(norm_cm, index=RELATION_CLASS, columns=RELATION_CLASS)
@@ -88,4 +89,5 @@ TASK_METRIC_MAP = {
     "tapt": None,
     "klue_re_type": compute_klue_re_leaderboard,
     "recent": compute_klue_re_recent_leaderboard,
+    "klue_re_entity_embedding": compute_klue_re_leaderboard,
 }
