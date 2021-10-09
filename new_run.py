@@ -34,7 +34,7 @@ from solution.data import (
     COLLATOR_MAP,
     PREPROCESSING_PIPELINE,
     kfold_split,
-  
+)
 from solution.models import (
     MODEL_INIT_FUNC,
 )
