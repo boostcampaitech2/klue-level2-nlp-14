@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from torchsampler import ImbalancedDatasetSampler # pip install https://github.com/ufoym/imbalanced-dataset-sampler/archive/master.zip
 from ..utils import ( 
     LOSS_MAP,
+    FocalLoss,
 )
 
 class DefaultTrainer(Trainer):
@@ -20,7 +21,18 @@ class DefaultTrainer(Trainer):
         loss = criterion(logits.view(-1, self.model.config.num_labels), labels.view(-1))
         
         return (loss, outputs) if return_outputs else loss
-    
+
+class XLMTrainer(Trainer):
+    def compute_loss(self, model, inputs, return_outputs=False):
+        labels = inputs.pop("labels")
+        outputs = model(**inputs)
+        logits = outputs.logits
+        
+        criterion = FocalLoss(gamma=0.5)
+        loss = criterion(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+        
+        return (loss, outputs) if return_outputs else loss
+
 class BalancedSamplerTrainer(Trainer):
     def get_train_dataloader(self) -> DataLoader:
         """
