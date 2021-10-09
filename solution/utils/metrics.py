@@ -6,7 +6,10 @@ from .file_utils import RELATION_CLASS
 
 def compute_micro_f1(logits, labels, label_indices=None):
     """ Compute Micro F1 score for specific labels """
+    print(logits, "(((((((logit)))))")
     predictions = np.argmax(logits, axis=1).ravel()
+    print(labels, '*******label---------')
+    print(predictions, '*********---pred-----*********')
     micro_f1 = f1_score(labels, predictions, 
                         average="micro", labels=label_indices)
     return micro_f1

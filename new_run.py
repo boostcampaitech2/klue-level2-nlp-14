@@ -61,6 +61,9 @@ def main():
         
     data_args, training_args, model_args, project_args = args
     
+
+    print(training_args)
+
     # Set seed
     set_seeds(training_args.seed)
     
@@ -109,6 +112,8 @@ def main():
         if model.config.vocab_size < len(tokenizer):
             print("resize...")
             model.resize_token_embeddings(len(tokenizer))
+
+        print(model, "************model")
         return model
             
     # Set-up WANDB

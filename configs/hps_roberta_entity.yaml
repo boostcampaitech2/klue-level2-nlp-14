@@ -1,23 +1,23 @@
 # Data Arguments
 DataArguments:
   name: jinmang2/load_klue_re
-  revision: v2.0.1b
+  revision: v3.0.1b
   data_cache_dir: cache
   collator_name: default
 
 # TrainingArguments
 TrainingArguments:
   report_to: wandb  #wandb report
-  run_name: hps_robert_entity_v201b
+  run_name: hps_robert_entity_v301b
   output_dir: output
   learning_rate: 3e-5
   do_train: True
-  do_eval: False
+  do_eval: True
   do_predict: True
   evaluation_strategy: epoch
   # save_strategy: None
-  per_device_train_batch_size: 32
-  per_device_eval_batch_size: None
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 32
   overwrite_output_dir: True
   num_train_epochs: 4
   # eval_steps: 100
@@ -38,7 +38,9 @@ TrainingArguments:
 # Model Arguments
 ModelingArguments:
   architectures: Entity_layer_RobertaForSequenceClassification
+  # architectures: AutoModelForSequenceClassification
   model_name_or_path: klue/roberta-large
+  # model_name_or_path: xlm-roberta-large
   model_cache_dir: cache
 
 # Project Arguments
@@ -60,7 +62,7 @@ HPSearchArguments:
   save_ckpt: False
   objective_metric: eval_auprc
   hp_per_device_train_batch_size: [8, 16, 32]
-  hp_per_device_eval_batch_size: 32
+  hp_per_device_eval_batch_size: 16
   hp_learning_rate: [1e-5, 2e-5, 3e-5, 5e-5]
   hp_warmup_ratio: [0., 0.1, 0.2, 0.6]
   hp_num_train_epochs: [2, 3]

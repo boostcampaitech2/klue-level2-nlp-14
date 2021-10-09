@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from transformers import BertForSequenceClassification
-from transformers.models.bert import BertModel
+from transformers.models.bert import BertModel, BertPreTrainedModel
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions, SequenceClassifierOutput
 from transformers.file_utils import ModelOutput
 from collections import OrderedDict, UserDict
@@ -19,7 +19,7 @@ from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
 
 
-class Entity_layer_BertEmbeddings(nn.Module):
+class BertEmbeddingsWithEntityLayer(nn.Module):
 
     def __init__(self, config):
         super().__init__()
@@ -38,14 +38,19 @@ class Entity_layer_BertEmbeddings(nn.Module):
                 torch.zeros(self.position_ids.size(), dtype=torch.long, device=self.position_ids.device),
                 persistent=False,
             )
+        self.voca_size = config.vocab_size
 
     def make_entity_ids(self, input_ids):
         entity_ids = torch.zeros_like(input_ids)
         for i in range(len(input_ids)):
-            sub_start = torch.nonzero(input_ids[i] == 32000)
-            sub_end = torch.nonzero(input_ids[i] == 32001)
-            obj_start = torch.nonzero(input_ids[i] == 32002)
-            obj_end = torch.nonzero(input_ids[i] == 32003)
+            # sub_start = torch.nonzero(input_ids[i] == 32000)
+            # sub_end = torch.nonzero(input_ids[i] == 32001)
+            # obj_start = torch.nonzero(input_ids[i] == 32002)
+            # obj_end = torch.nonzero(input_ids[i] == 32003)
+            sub_start = torch.nonzero(input_ids[i] == self.voca_size + 1)
+            sub_end = torch.nonzero(input_ids[i] == self.voca_size + 2)
+            obj_start = torch.nonzero(input_ids[i] == self.voca_size + 3)
+            obj_end = torch.nonzero(input_ids[i] == self.voca_size + 4)
             
             entity_ids[i][sub_start[0]+1:sub_end[0]] = 1
             entity_ids[i][obj_start[0]+1:obj_end[0]] = 1
@@ -65,9 +70,7 @@ class Entity_layer_BertEmbeddings(nn.Module):
         if position_ids is None:
             position_ids = self.position_ids[:, past_key_values_length : seq_length + past_key_values_length]
 
-        # Setting the token_type_ids to the registered buffer in constructor where it is all zeros, which usually occurs
-        # when its auto-generated, registered buffer helps users when tracing the model without passing token_type_ids, solves
-        # issue #5664
+
         if token_type_ids is None:
             if hasattr(self, "token_type_ids"):
                 buffered_token_type_ids = self.token_type_ids[:, :seq_length]
@@ -93,10 +96,10 @@ class Entity_layer_BertEmbeddings(nn.Module):
         return embeddings
 
 
-class Entity_layer_BertModel(BertModel):
+class BertModelWithEntityLayer(BertModel):
     def __init__(self, config, add_pooling_layer=True):
         super().__init__(config)
-        self.embeddings = Entity_layer_BertEmbeddings(config)
+        self.embeddings = BertEmbeddingsWithEntityLayer(config)
 
     def forward(
         self,
@@ -115,24 +118,7 @@ class Entity_layer_BertModel(BertModel):
         output_hidden_states=None,
         return_dict=None,
     ):
-        r"""
-        encoder_hidden_states  (:obj:`torch.FloatTensor` of shape :obj:`(batch_size, sequence_length, hidden_size)`, `optional`):
-            Sequence of hidden-states at the output of the last layer of the encoder. Used in the cross-attention if
-            the model is configured as a decoder.
-        encoder_attention_mask (:obj:`torch.FloatTensor` of shape :obj:`(batch_size, sequence_length)`, `optional`):
-            Mask to avoid performing attention on the padding token indices of the encoder input. This mask is used in
-            the cross-attention if the model is configured as a decoder. Mask values selected in ``[0, 1]``:
-            - 1 for tokens that are **not masked**,
-            - 0 for tokens that are **masked**.
-        past_key_values (:obj:`tuple(tuple(torch.FloatTensor))` of length :obj:`config.n_layers` with each tuple having 4 tensors of shape :obj:`(batch_size, num_heads, sequence_length - 1, embed_size_per_head)`):
-            Contains precomputed key and value hidden states of the attention blocks. Can be used to speed up decoding.
-            If :obj:`past_key_values` are used, the user can optionally input only the last :obj:`decoder_input_ids`
-            (those that don't have their past key value states given to this model) of shape :obj:`(batch_size, 1)`
-            instead of all :obj:`decoder_input_ids` of shape :obj:`(batch_size, sequence_length)`.
-        use_cache (:obj:`bool`, `optional`):
-            If set to :obj:`True`, :obj:`past_key_values` key value states are returned and can be used to speed up
-            decoding (see :obj:`past_key_values`).
-        """
+
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
@@ -156,7 +142,6 @@ class Entity_layer_BertModel(BertModel):
         batch_size, seq_length = input_shape
         device = input_ids.device if input_ids is not None else inputs_embeds.device
 
-        # past_key_values_length
         past_key_values_length = past_key_values[0][0].shape[2] if past_key_values is not None else 0
 
         if attention_mask is None:
@@ -170,12 +155,8 @@ class Entity_layer_BertModel(BertModel):
             else:
                 token_type_ids = torch.zeros(input_shape, dtype=torch.long, device=device)
 
-        # We can provide a self-attention mask of dimensions [batch_size, from_seq_length, to_seq_length]
-        # ourselves in which case we just need to make it broadcastable to all heads.
         extended_attention_mask: torch.Tensor = self.get_extended_attention_mask(attention_mask, input_shape, device)
 
-        # If a 2D or 3D attention mask is provided for the cross-attention
-        # we need to make broadcastable to [batch_size, num_heads, seq_length, seq_length]
         if self.config.is_decoder and encoder_hidden_states is not None:
             encoder_batch_size, encoder_sequence_length, _ = encoder_hidden_states.size()
             encoder_hidden_shape = (encoder_batch_size, encoder_sequence_length)
@@ -185,11 +166,6 @@ class Entity_layer_BertModel(BertModel):
         else:
             encoder_extended_attention_mask = None
 
-        # Prepare head mask if needed
-        # 1.0 in head_mask indicate we keep the head
-        # attention_probs has shape bsz x n_heads x N x N
-        # input head_mask has shape [num_heads] or [num_hidden_layers x num_heads]
-        # and head_mask is converted to shape [num_hidden_layers x batch x num_heads x seq_length x seq_length]
         head_mask = self.get_head_mask(head_mask, self.config.num_hidden_layers)
 
         embedding_output = self.embeddings(
@@ -228,10 +204,11 @@ class Entity_layer_BertModel(BertModel):
         )
 
 
-class Entity_layer_BertForSequenceClassification(BertForSequenceClassification):
-    def __init__(self, config, add_pooling_layer=True):
+class BertForSequenceClassificationWithEntityLayer(BertForSequenceClassification):
+
+    def __init__(self, config):
         super().__init__(config)
-        self.bert = Entity_layer_BertModel(config)
+        self.bert = BertModelWithEntityLayer(config)
 
     def forward(
         self,
@@ -247,12 +224,7 @@ class Entity_layer_BertForSequenceClassification(BertForSequenceClassification):
         output_hidden_states=None,
         return_dict=None,
     ):
-        r"""
-        labels (:obj:`torch.LongTensor` of shape :obj:`(batch_size,)`, `optional`):
-            Labels for computing the sequence classification/regression loss. Indices should be in :obj:`[0, ...,
-            config.num_labels - 1]`. If :obj:`config.num_labels == 1` a regression loss is computed (Mean-Square loss),
-            If :obj:`config.num_labels > 1` a classification loss is computed (Cross-Entropy).
-        """
+
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         outputs = self.bert(
@@ -269,7 +241,6 @@ class Entity_layer_BertForSequenceClassification(BertForSequenceClassification):
         )
 
         pooled_output = outputs[1]
-
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)
 

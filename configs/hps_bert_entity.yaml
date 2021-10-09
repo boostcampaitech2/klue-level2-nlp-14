@@ -1,18 +1,18 @@
 # Data Arguments
 DataArguments:
   name: jinmang2/load_klue_re
-  revision: v2.0.1
+  revision: v3.0.1b
   data_cache_dir: cache
   collator_name: default
 
 # TrainingArguments
 TrainingArguments:
   report_to: wandb  #wandb report
-  run_name: hps_bert_entity_v201
+  run_name: typetagging_bert_v301b
   output_dir: output
   learning_rate: 3e-5
   do_train: True
-  do_eval: False
+  do_eval: True
   do_predict: True
   evaluation_strategy: epoch
   # save_strategy: epoch
@@ -38,6 +38,7 @@ TrainingArguments:
 # Model Arguments
 ModelingArguments:
   architectures: Entity_layer_BertForSequenceClassification
+  # architectures: AutoModelForSequenceClassification
   # model_name_or_path: klue/roberta-large
   model_name_or_path: klue/bert-base
   model_cache_dir: cache

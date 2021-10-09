@@ -18,4 +18,5 @@ class DataArguments:
     )
     prep_pipeline_name: str = field(
         default="entity_tagging", metadata={"help": ""},
+        # default="type_entity_tagging", metadata={"help": ""},
     )

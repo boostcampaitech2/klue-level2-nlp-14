@@ -16,7 +16,6 @@ from transformers.modeling_utils import PreTrainedModel
 
 
 
-
 class Entity_layer_RobertaEmbeddings(nn.Module):
 
     def __init__(self, config):
@@ -54,6 +53,12 @@ class Entity_layer_RobertaEmbeddings(nn.Module):
             sub_end = torch.nonzero(input_ids[i] == 32001)
             obj_start = torch.nonzero(input_ids[i] == 32002)
             obj_end = torch.nonzero(input_ids[i] == 32003)
+
+            #xlm-roberta
+            # sub_start = torch.nonzero(input_ids[i] == 250002)
+            # sub_end = torch.nonzero(input_ids[i] == 250003)
+            # obj_start = torch.nonzero(input_ids[i] == 250004)
+            # obj_end = torch.nonzero(input_ids[i] == 250005)
             
             entity_ids[i][sub_start[0]+1:sub_end[0]] = 1
             entity_ids[i][obj_start[0]+1:obj_end[0]] = 1
@@ -66,7 +71,6 @@ class Entity_layer_RobertaEmbeddings(nn.Module):
     ):
         if position_ids is None:
             if input_ids is not None:
-                # Create the position ids from the input token ids. Any padded tokens remain padded.
                 position_ids = self.create_position_ids_from_input_ids(input_ids, self.padding_idx, past_key_values_length)
             else:
                 position_ids = self.create_position_ids_from_inputs_embeds(inputs_embeds)
@@ -78,9 +82,6 @@ class Entity_layer_RobertaEmbeddings(nn.Module):
 
         seq_length = input_shape[1]
 
-        # Setting the token_type_ids to the registered buffer in constructor where it is all zeros, which usually occurs
-        # when its auto-generated, registered buffer helps users when tracing the model without passing token_type_ids, solves
-        # issue #5664
         if token_type_ids is None:
             if hasattr(self, "token_type_ids"):
                 buffered_token_type_ids = self.token_type_ids[:, :seq_length]
@@ -122,6 +123,7 @@ class Entity_layer_RobertaEmbeddings(nn.Module):
 
 
 class Entity_layer_RobertaModel(RobertaModel):
+    _keys_to_ignore_on_load_missing = [r"position_ids"]
     def __init__(self, config, add_pooling_layer=True):
         super().__init__(config)
         self.embeddings = Entity_layer_RobertaEmbeddings(config)
@@ -237,10 +239,6 @@ class Entity_layer_RobertaModel(RobertaModel):
             attentions=encoder_outputs.attentions,
             cross_attentions=encoder_outputs.cross_attentions,
         )
-
-
-
-
 
 
 class Entity_layer_RobertaForSequenceClassification(RobertaForSequenceClassification):
