@@ -1,7 +1,12 @@
 import torch
 from torch import nn
-from transformers import BertForSequenceClassification
-from transformers.models.bert import BertModel, BertPreTrainedModel
+from transformers.models.bert.modeling_bert import (
+    BertModel,
+    BertEncoder,
+    BertEmbeddings,
+    BertPooler,
+    BertPreTrainedModel
+)
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions, SequenceClassifierOutput
 from transformers.file_utils import ModelOutput
 from collections import OrderedDict, UserDict
@@ -18,47 +23,21 @@ from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
 
-
-class BertEmbeddingsWithEntityLayer(nn.Module):
+class BertEmbeddingWithEntity(BertEmbeddings):
 
     def __init__(self, config):
-        super().__init__()
-        self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size, padding_idx=config.pad_token_id)
-        self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size)
-        self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size)
-        self.entity_embeddings = nn.Embedding(2, config.hidden_size, padding_idx=config.pad_token_id)
-        
-        self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.position_embedding_type = getattr(config, "position_embedding_type", "absolute")
-        self.register_buffer("position_ids", torch.arange(config.max_position_embeddings).expand((1, -1)))
-        if version.parse(torch.__version__) > version.parse("1.6.0"):
-            self.register_buffer(
-                "token_type_ids",
-                torch.zeros(self.position_ids.size(), dtype=torch.long, device=self.position_ids.device),
-                persistent=False,
-            )
-        self.voca_size = config.vocab_size
-
-    def make_entity_ids(self, input_ids):
-        entity_ids = torch.zeros_like(input_ids)
-        for i in range(len(input_ids)):
-            # sub_start = torch.nonzero(input_ids[i] == 32000)
-            # sub_end = torch.nonzero(input_ids[i] == 32001)
-            # obj_start = torch.nonzero(input_ids[i] == 32002)
-            # obj_end = torch.nonzero(input_ids[i] == 32003)
-            sub_start = torch.nonzero(input_ids[i] == self.voca_size + 1)
-            sub_end = torch.nonzero(input_ids[i] == self.voca_size + 2)
-            obj_start = torch.nonzero(input_ids[i] == self.voca_size + 3)
-            obj_end = torch.nonzero(input_ids[i] == self.voca_size + 4)
-            
-            entity_ids[i][sub_start[0]+1:sub_end[0]] = 1
-            entity_ids[i][obj_start[0]+1:obj_end[0]] = 1
-
-        return entity_ids
+        super().__init__(config)
+        self.entity_embeddings = nn.Embedding(2, config.hidden_size)
+        self.config = config
 
     def forward(
-        self, input_ids=None, token_type_ids=None, position_ids=None, entity_ids=None, inputs_embeds=None, past_key_values_length=0
+        self,
+        input_ids=None,
+        token_type_ids=None,
+        position_ids=None,
+        entity_ids=None,
+        inputs_embeds=None,
+        past_key_values_length=0,
     ):
         if input_ids is not None:
             input_shape = input_ids.size()
@@ -70,7 +49,9 @@ class BertEmbeddingsWithEntityLayer(nn.Module):
         if position_ids is None:
             position_ids = self.position_ids[:, past_key_values_length : seq_length + past_key_values_length]
 
-
+        # Setting the token_type_ids to the registered buffer in constructor where it is all zeros, which usually occurs
+        # when its auto-generated, registered buffer helps users when tracing the model without passing token_type_ids, solves
+        # issue #5664
         if token_type_ids is None:
             if hasattr(self, "token_type_ids"):
                 buffered_token_type_ids = self.token_type_ids[:, :seq_length]
@@ -83,23 +64,38 @@ class BertEmbeddingsWithEntityLayer(nn.Module):
             inputs_embeds = self.word_embeddings(input_ids)
         token_type_embeddings = self.token_type_embeddings(token_type_ids)
 
-        entity_ids = self.make_entity_ids(input_ids)
-        entity_embeddings = self.entity_embeddings(entity_ids)
-
         embeddings = inputs_embeds + token_type_embeddings
         if self.position_embedding_type == "absolute":
             position_embeddings = self.position_embeddings(position_ids)
             embeddings += position_embeddings
-        embeddings += entity_embeddings
+
+        # Add entity embedding @jinmang2
+        if entity_ids is not None:
+            entity_embeddings = self.entity_embeddings(entity_ids)
+            embeddings += entity_embeddings
+
         embeddings = self.LayerNorm(embeddings)
         embeddings = self.dropout(embeddings)
         return embeddings
 
 
-class BertModelWithEntityLayer(BertModel):
+class BertModelWithEntity(BertPreTrainedModel):
     def __init__(self, config, add_pooling_layer=True):
         super().__init__(config)
-        self.embeddings = BertEmbeddingsWithEntityLayer(config)
+        self.config = config
+
+        self.embeddings = BertEmbeddingWithEntity(config)
+        self.encoder = BertEncoder(config)
+
+        self.pooler = BertPooler(config) if add_pooling_layer else None
+
+        self.init_weights()
+
+    def get_input_embeddings(self):
+        return self.embeddings.word_embeddings
+
+    def set_input_embeddings(self, value):
+        self.embeddings.word_embeddings = value
 
     def forward(
         self,
@@ -204,11 +200,21 @@ class BertModelWithEntityLayer(BertModel):
         )
 
 
-class BertForSequenceClassificationWithEntityLayer(BertForSequenceClassification):
-
+class BertForSequenceClassificationWithEntity(BertPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
-        self.bert = BertModelWithEntityLayer(config)
+        self.num_labels = config.num_labels
+        self.config = config
+
+        self.bert = BertModelWithEntity(config)
+        classifier_dropout = (
+            config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
+        )
+        self.dropout = nn.Dropout(classifier_dropout)
+        self.classifier = nn.Linear(config.hidden_size, config.num_labels)
+
+        self.init_weights()
+
 
     def forward(
         self,
@@ -216,7 +222,7 @@ class BertForSequenceClassificationWithEntityLayer(BertForSequenceClassification
         attention_mask=None,
         token_type_ids=None,
         position_ids=None,
-        entity_ids = None,
+        entity_ids=None,
         head_mask=None,
         inputs_embeds=None,
         labels=None,
@@ -224,7 +230,12 @@ class BertForSequenceClassificationWithEntityLayer(BertForSequenceClassification
         output_hidden_states=None,
         return_dict=None,
     ):
-
+        r"""
+        labels (:obj:`torch.LongTensor` of shape :obj:`(batch_size,)`, `optional`):
+            Labels for computing the sequence classification/regression loss. Indices should be in :obj:`[0, ...,
+            config.num_labels - 1]`. If :obj:`config.num_labels == 1` a regression loss is computed (Mean-Square loss),
+            If :obj:`config.num_labels > 1` a classification loss is computed (Cross-Entropy).
+        """
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         outputs = self.bert(
@@ -232,7 +243,7 @@ class BertForSequenceClassificationWithEntityLayer(BertForSequenceClassification
             attention_mask=attention_mask,
             token_type_ids=token_type_ids,
             position_ids=position_ids,
-            entity_ids = entity_ids,
+            entity_ids=entity_ids,
             head_mask=head_mask,
             inputs_embeds=inputs_embeds,
             output_attentions=output_attentions,
@@ -241,6 +252,7 @@ class BertForSequenceClassificationWithEntityLayer(BertForSequenceClassification
         )
 
         pooled_output = outputs[1]
+
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)
 
