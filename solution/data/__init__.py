@@ -8,6 +8,7 @@ from .collator import (
 from .entity_tagging import mark_entity_spans, convert_example_to_features
 from .entity_tagging import mark_type_entity_spans, convert_type_example_to_features
 from .entity_tagging import get_entity_embedding
+from .split import kfold_split
 
 
 COLLATOR_MAP = {

@@ -1,3 +1,4 @@
+   
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -29,8 +30,8 @@ def compute_auprc(probs, labels):
     return auprc
 
 
-def get_confusion_matrix(logits, labels):
-    preds = np.argmax(logits, axis=1).ravel()
+def get_confusion_matrix(logit_or_preds, labels, is_logit=True):
+    preds = np.argmax(logit_or_preds, axis=1).ravel() if is_logit else logit_or_preds
     cm = confusion_matrix(labels, preds)
     norm_cm = cm / np.sum(cm, axis=1)[:,None]
     cm = pd.DataFrame(norm_cm, index=RELATION_CLASS, columns=RELATION_CLASS)

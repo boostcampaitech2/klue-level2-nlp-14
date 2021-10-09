@@ -1,7 +1,11 @@
 import torch
+import logging
 from functools import partial
 from typing import Tuple, List, Any, Dict
-from transformers import BertTokenizerFast
+import transformers
+from transformers import BertTokenizerFast, PreTrainedTokenizer
+
+logger = logging.getLogger(__name__)
 
 
 def mark_entity_spans(examples,
@@ -137,6 +141,8 @@ def convert_example_to_features(
     object_end_marker: str
 ) -> Dict[str, List[Any]]:
 
+    tokenizer_type = check_tokenizer_type(tokenizer)
+  
     def fix_tokenization_error(text: str) -> List[str]:
         """Fix the tokenization due to the `obj` and `subj` marker inserted
         in the middle of a word.
@@ -151,23 +157,32 @@ def convert_example_to_features(
         """
         batch_encoding = tokenizer._tokenizer.encode(text)
         tokens = batch_encoding.tokens
-        if not issubclass(tokenizer.__class__, BertTokenizerFast):
-            return tokens
+
         # subject
         if text[text.find(subject_end_marker) + len(subject_end_marker)] != " ":
             space_idx = tokens.index(subject_end_marker) + 1
-            # tokenizer_type == "bert-wp"
-            if not tokens[space_idx].startswith("##") and "가" <= tokens[space_idx][0] <= "힣":
-                tokens[space_idx] = "##" + tokens[space_idx]
+            if tokenizer_type == "xlm-sp":
+                if tokens[space_idx] == "▁":
+                    tokens.pop(space_idx)
+                elif tokens[space_idx].startswith("▁"):
+                    tokens[space_idx] = tokens[space_idx][1:]
+            elif tokenizer_type == "bert-wp":
+                if not tokens[space_idx].startswith("##") and "가" <= tokens[space_idx][0] <= "힣":
+                    tokens[space_idx] = "##" + tokens[space_idx]
 
         # object
         if text[text.find(object_end_marker) + len(object_end_marker)] != " ":
             space_idx = tokens.index(object_end_marker) + 1
-            # tokenizer_type == "bert-wp"
-            if not tokens[space_idx].startswith("##") and "가" <= tokens[space_idx][0] <= "힣":
-                tokens[space_idx] = "##" + tokens[space_idx]
-
-        return tokens
+            if tokenizer_type == "xlm-sp":
+                if tokens[space_idx] == "▁":
+                    tokens.pop(space_idx)
+                elif tokens[space_idx].startswith("▁"):
+                    tokens[space_idx] = tokens[space_idx][1:]
+            elif tokenizer_type == "bert-wp":
+                if not tokens[space_idx].startswith("##") and "가" <= tokens[space_idx][0] <= "힣":
+                    tokens[space_idx] = "##" + tokens[space_idx]
+        
+        return tokens    
 
     tokens = fix_tokenization_error(examples["text"])
 
@@ -191,6 +206,8 @@ def convert_type_example_to_features(
     subject_end_marker   = f"</subj:{subj_type}>"
     object_end_marker    = f"</obj:{obj_type}>"
 
+    tokenizer_type = check_tokenizer_type(tokenizer)
+
     def fix_tokenization_error(text: str) -> List[str]:
         """Fix the tokenization due to the `obj` and `subj` marker inserted
         in the middle of a word.
@@ -205,23 +222,32 @@ def convert_type_example_to_features(
         """
         batch_encoding = tokenizer._tokenizer.encode(text)
         tokens = batch_encoding.tokens
-        if not issubclass(tokenizer.__class__, BertTokenizerFast):
-            return tokens
+
         # subject
         if text[text.find(subject_end_marker) + len(subject_end_marker)] != " ":
             space_idx = tokens.index(subject_end_marker) + 1
-            # tokenizer_type == "bert-wp"
-            if not tokens[space_idx].startswith("##") and "가" <= tokens[space_idx][0] <= "힣":
-                tokens[space_idx] = "##" + tokens[space_idx]
+            if tokenizer_type == "xlm-sp":
+                if tokens[space_idx] == "▁":
+                    tokens.pop(space_idx)
+                elif tokens[space_idx].startswith("▁"):
+                    tokens[space_idx] = tokens[space_idx][1:]
+            elif tokenizer_type == "bert-wp":
+                if not tokens[space_idx].startswith("##") and "가" <= tokens[space_idx][0] <= "힣":
+                    tokens[space_idx] = "##" + tokens[space_idx]
 
         # object
         if text[text.find(object_end_marker) + len(object_end_marker)] != " ":
             space_idx = tokens.index(object_end_marker) + 1
-            # tokenizer_type == "bert-wp"
-            if not tokens[space_idx].startswith("##") and "가" <= tokens[space_idx][0] <= "힣":
-                tokens[space_idx] = "##" + tokens[space_idx]
-
-        return tokens
+            if tokenizer_type == "xlm-sp":
+                if tokens[space_idx] == "▁":
+                    tokens.pop(space_idx)
+                elif tokens[space_idx].startswith("▁"):
+                    tokens[space_idx] = tokens[space_idx][1:]
+            elif tokenizer_type == "bert-wp":
+                if not tokens[space_idx].startswith("##") and "가" <= tokens[space_idx][0] <= "힣":
+                    tokens[space_idx] = "##" + tokens[space_idx]
+        
+        return tokens    
 
     tokens = fix_tokenization_error(examples["text"])
 
@@ -230,7 +256,38 @@ def convert_type_example_to_features(
         "tokenized": tokens,
     }
 
-
+  
+# ref: https://github.com/KLUE-benchmark/KLUE-baseline/blob/8a03c9447e4c225e806877a84242aea11258c790/klue_baseline/data/utils.py#L92
+def check_tokenizer_type(tokenizer: PreTrainedTokenizer) -> str:
+    """Checks tokenizer type.
+    In KLUE paper, we only support wordpiece (BERT, KLUE-RoBERTa, ELECTRA) & sentencepiece (XLM-R).
+    Will give warning if you use other tokenization. (e.g. bbpe)
+    # SentencePiece
+      - XLMRobertaTokenizer : ['▁충', '무', '공', '▁이', '순', '신', '은', '▁조선', '▁중', '기의', '▁무', '신', '이다', '.']
+      - kogpt2-base-v2      : ['▁충', '무공', '▁이순', '신은', '▁조선', '▁중기의', '▁무신', '이다.']
+      - KoBART-base         : ['▁충', '무공', '▁이순', '신은', '▁조선', '▁중기의', '▁무신', '이다.']
+    # BertTokenizer(Char-level, WordPiece)
+      - KLUE(BERT, RoBERTa) : ['충무', '##공', '이순신', '##은', '조선', '중기', '##의', '무신', '##이다', '.']
+      - KcELECTRA           : ['충무', '##공', '이순신', '##은', '조선', '중기', '##의', '무신', '##이다', '.']
+      - KcBERT              : ['충', '##무', '##공', '이순신', '##은', '조선', '중', '##기의', '무신', '##이다', '.']
+    """
+    if isinstance(tokenizer, transformers.XLMRobertaTokenizer) or \
+       isinstance(tokenizer, transformers.XLMRobertaTokenizerFast) or \
+       tokenizer.name_or_path == "skt/kogpt2-base-v2" or \
+       tokenizer.name_or_path == "KoBART-base":
+        logger.info(f"Using {type(tokenizer).__name__} for fixing tokenization result")
+        return "xlm-sp"  # Sentencepiece xlm-sp or gpt-sp or bart-sp
+    elif isinstance(tokenizer, transformers.BertTokenizer) or \
+         isinstance(tokenizer, transformers.BertTokenizerFast):
+        logger.info(f"Using {type(tokenizer).__name__} for fixing tokenization result")
+        return "bert-wp"  # Wordpiece (including BertTokenizer & ElectraTokenizer)
+    else:
+        logger.warn(
+            "If you are using other tokenizer (e.g. bbpe), you should change code in `fix_tokenization_error()`"
+        )
+        return "other"
+      
+      
 def get_entity_embedding(
     examples,
     tokenizer,

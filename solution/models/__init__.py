@@ -8,7 +8,7 @@ from .modeling_bert import *
 from .modeling_electra import *
 from .modeling_roberta import *
 from .modeling_mt5 import *
-
+from .modeling_xlm import *
 
 # Get __init__ modules
 import sys

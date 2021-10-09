@@ -1,13 +1,15 @@
 from transformers import Trainer
 import datasets
 from torch.utils.data import DataLoader
-from torchsampler import ImbalancedDatasetSampler # pip install https://github.com/ufoym/imbalanced-dataset-sampler/archive/master.zip
+# pip install https://github.com/ufoym/imbalanced-dataset-sampler/archive/master.zip
+from torchsampler import ImbalancedDatasetSampler
 from ..utils import ( 
     LOSS_MAP,
     FocalLoss,
-)
 
-class DefaultTrainer(Trainer):
+  
+class CustomTrainer(Trainer):
+
     def compute_loss(self, model, inputs, return_outputs=False):
         labels = inputs.pop("labels")
         outputs = model(**inputs)
@@ -22,6 +24,7 @@ class DefaultTrainer(Trainer):
         
         return (loss, outputs) if return_outputs else loss
 
+  
 class XLMTrainer(Trainer):
     def compute_loss(self, model, inputs, return_outputs=False):
         labels = inputs.pop("labels")
@@ -33,6 +36,7 @@ class XLMTrainer(Trainer):
         
         return (loss, outputs) if return_outputs else loss
 
+  
 class BalancedSamplerTrainer(Trainer):
     def get_train_dataloader(self) -> DataLoader:
         """
@@ -63,7 +67,7 @@ class BalancedSamplerTrainer(Trainer):
             num_workers=self.args.dataloader_num_workers,
             pin_memory=self.args.dataloader_pin_memory,
         )
-    
+
     def compute_loss(self, model, inputs, return_outputs=False):
         labels = inputs.pop("labels")
         outputs = model(**inputs)
@@ -75,5 +79,5 @@ class BalancedSamplerTrainer(Trainer):
             criterion = LOSS_MAP[self.args.loss]()
         
         loss = criterion(logits.view(-1, self.model.config.num_labels), labels.view(-1))
-        
+  
         return (loss, outputs) if return_outputs else loss

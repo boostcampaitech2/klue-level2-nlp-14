@@ -1,12 +1,13 @@
 from transformers import Trainer
 from .sampler import (
     BalancedSamplerTrainer,
-    DefaultTrainer,
+    CustomTrainer,
     XLMTrainer,
 )
 
 TRAINER_MAP = {
-    "default": DefaultTrainer,
+    "default": Trainer,
+    "custom": CustomTrainer,
     "balanced": BalancedSamplerTrainer,
     "xlm": XLMTrainer,
 }
