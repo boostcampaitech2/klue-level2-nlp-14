@@ -1,10 +1,22 @@
-from transformers import RobertaForSequenceClassification
-from transformers.modeling_outputs import SequenceClassifierOutput
-from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
-from transformers import PreTrainedModel, RobertaPreTrainedModel, RobertaModel
+import math
+from collections import OrderedDict, UserDict
 
 import torch
 import torch.nn as nn
+from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
+
+from transformers.modeling_utils import PreTrainedModel
+from transformers.models.modeling_roberta import (
+  RobertaModel,
+  RobertaPreTrainedModel,
+  RobertaForSequenceClassification,
+)
+from transformers.file_utils import ModelOutput
+from transformers.modeling_outputs import (
+  BaseModelOutputWithPoolingAndCrossAttentions,
+  SequenceClassifierOutput,
+)
+
 
 class RobertaForSequenceClassificationLstm(RobertaPreTrainedModel):
     _keys_to_ignore_on_load_missing = [r"position_ids"]

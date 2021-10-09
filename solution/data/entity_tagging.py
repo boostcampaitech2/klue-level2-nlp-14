@@ -13,8 +13,8 @@ def mark_entity_spans(examples,
                       object_start_marker: str, object_end_marker: str):
 
     def _mark_entity_spans(
-        text: str, 
-        subject_range=Tuple[int, int], 
+        text: str,
+        subject_range=Tuple[int, int],
         object_range=Tuple[int, int]
     ) -> str:
         """ Adds entity markers to the text to identify the subject/object entities.
@@ -55,10 +55,10 @@ def mark_entity_spans(examples,
         marked_text = "".join(segments)
 
         return marked_text
-    
+
     subject_entity = examples["subject_entity"]
     object_entity = examples["object_entity"]
-    
+
     text = _mark_entity_spans(
         examples["sentence"],
         (subject_entity["start_idx"], subject_entity["end_idx"]),
@@ -68,13 +68,13 @@ def mark_entity_spans(examples,
 
 
 def mark_type_entity_spans(examples):
-    
+
     subject_entity = examples["subject_entity"]
     object_entity = examples["object_entity"]
-    
+
     subj_type = subject_entity["type"]
     obj_type = object_entity["type"]
-    
+
     subject_start_marker = f"<subj:{subj_type}>"
     subject_end_marker   = f"</subj:{subj_type}>"
     object_start_marker  = f"<obj:{obj_type}>"
@@ -82,7 +82,7 @@ def mark_type_entity_spans(examples):
 
     def _mark_entity_spans(
         text: str,
-        subject_range=Tuple[int, int], 
+        subject_range=Tuple[int, int],
         object_range=Tuple[int, int],
     ) -> str:
         """ Adds entity markers to the text to identify the subject/object entities.
@@ -123,7 +123,7 @@ def mark_type_entity_spans(examples):
         marked_text = "".join(segments)
 
         return marked_text
-    
+
     text = _mark_entity_spans(
         examples["sentence"],
         (subject_entity["start_idx"], subject_entity["end_idx"]),
@@ -133,7 +133,7 @@ def mark_type_entity_spans(examples):
 
 
 def convert_example_to_features(
-    examples, 
+    examples,
     tokenizer,
     subject_start_marker: str,
     subject_end_marker: str,
@@ -142,7 +142,7 @@ def convert_example_to_features(
 ) -> Dict[str, List[Any]]:
 
     tokenizer_type = check_tokenizer_type(tokenizer)
-    
+  
     def fix_tokenization_error(text: str) -> List[str]:
         """Fix the tokenization due to the `obj` and `subj` marker inserted
         in the middle of a word.
@@ -151,7 +151,7 @@ def convert_example_to_features(
             >>> tokens = ['<obj>', '조지', '해리', '##슨', '</obj>', '이', '쓰', '##고', '<subj>', '비틀즈', '</subj>', '가']
             >>> fix_tokenization_error(text)
             ['<obj>', '조지', '해리', '##슨', '</obj>', '##이', '쓰', '##고', '<subj>', '비틀즈', '</subj>', '##가']
-            
+
         Only support for BertTokenizerFast
         If you use bbpe, change code!
         """
@@ -183,9 +183,9 @@ def convert_example_to_features(
                     tokens[space_idx] = "##" + tokens[space_idx]
         
         return tokens    
-    
+
     tokens = fix_tokenization_error(examples["text"])
-    
+
     return {
         "input_ids": tokenizer.convert_tokens_to_ids(tokens),
         "tokenized": tokens,
@@ -193,16 +193,16 @@ def convert_example_to_features(
 
 
 def convert_type_example_to_features(
-    examples, 
+    examples,
     tokenizer,
 ) -> Dict[str, List[Any]]:
-    
+
     subject_entity = examples["subject_entity"]
     object_entity = examples["object_entity"]
-    
+
     subj_type = subject_entity["type"]
     obj_type = object_entity["type"]
-    
+
     subject_end_marker   = f"</subj:{subj_type}>"
     object_end_marker    = f"</obj:{obj_type}>"
 
@@ -216,7 +216,7 @@ def convert_type_example_to_features(
             >>> tokens = ['<obj>', '조지', '해리', '##슨', '</obj>', '이', '쓰', '##고', '<subj>', '비틀즈', '</subj>', '가']
             >>> fix_tokenization_error(text)
             ['<obj>', '조지', '해리', '##슨', '</obj>', '##이', '쓰', '##고', '<subj>', '비틀즈', '</subj>', '##가']
-            
+
         Only support for BertTokenizerFast
         If you use bbpe, change code!
         """
@@ -248,14 +248,15 @@ def convert_type_example_to_features(
                     tokens[space_idx] = "##" + tokens[space_idx]
         
         return tokens    
-    
+
     tokens = fix_tokenization_error(examples["text"])
-    
+
     return {
         "input_ids": tokenizer.convert_tokens_to_ids(tokens),
         "tokenized": tokens,
     }
 
+  
 # ref: https://github.com/KLUE-benchmark/KLUE-baseline/blob/8a03c9447e4c225e806877a84242aea11258c790/klue_baseline/data/utils.py#L92
 def check_tokenizer_type(tokenizer: PreTrainedTokenizer) -> str:
     """Checks tokenizer type.
@@ -285,3 +286,30 @@ def check_tokenizer_type(tokenizer: PreTrainedTokenizer) -> str:
             "If you are using other tokenizer (e.g. bbpe), you should change code in `fix_tokenization_error()`"
         )
         return "other"
+      
+      
+def get_entity_embedding(
+    examples,
+    tokenizer,
+    subject_start_marker: str,
+    subject_end_marker: str,
+    object_start_marker: str,
+    object_end_marker: str
+) -> Dict[str, List[Any]]:
+
+    subj_start_id = tokenizer.convert_tokens_to_ids(subject_start_marker)
+    subj_end_id = tokenizer.convert_tokens_to_ids(subject_end_marker)
+    obj_start_id = tokenizer.convert_tokens_to_ids(object_start_marker)
+    obj_end_id = tokenizer.convert_tokens_to_ids(object_end_marker)
+
+    entity_ids = []
+    is_entity = False
+    for input_id in examples["input_ids"]:
+        if input_id in [subj_end_id, obj_end_id]:
+            is_entity = False
+        entity_id = 1 if is_entity else 0
+        entity_ids.append(entity_id)
+        if input_id in [subj_start_id, obj_start_id]:
+            is_entity = True
+
+    return {"entity_ids": entity_ids,}
