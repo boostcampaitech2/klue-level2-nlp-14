@@ -4,10 +4,10 @@ from solution.data.load_data import *
 import pandas as pd
 import torch
 import torch.nn.functional as F
-import pickle as pickle
 import numpy as np
 import argparse
 from tqdm import tqdm
+from solution.utils import IDX2LABEL
 
 def inference(model, tokenized_sent, device):
   """
@@ -34,18 +34,6 @@ def inference(model, tokenized_sent, device):
     output_prob.append(prob)
   
   return np.concatenate(output_pred).tolist(), np.concatenate(output_prob, axis=0).tolist()
-
-def num_to_label(label):
-  """
-    숫자로 되어 있던 class를 원본 문자열 라벨로 변환 합니다.
-  """
-  origin_label = []
-  with open('dict_num_to_label.pkl', 'rb') as f:
-    dict_num_to_label = pickle.load(f)
-  for v in label:
-    origin_label.append(dict_num_to_label[v])
-  
-  return origin_label
 
 def load_test_dataset(dataset_dir, tokenizer):
   """
@@ -80,7 +68,7 @@ def main(args):
 
   ## predict answer
   pred_answer, output_prob = inference(model, Re_test_dataset, device) # model에서 class 추론
-  pred_answer = num_to_label(pred_answer) # 숫자로 된 class를 원래 문자열 라벨로 변환.
+  pred_answer = IDX2LABEL[pred_answer] # 숫자로 된 class를 원래 문자열 라벨로 변환.
   
   ## make csv file with predicted answer
   #########################################################
