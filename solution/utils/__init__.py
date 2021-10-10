@@ -9,13 +9,14 @@ from .metrics import TASK_METRIC_MAP
 from .inference import INFERENCE_PIPELINE
 from .utils import softmax, set_seeds
 from .loss import (
+    CrossEntropyLoss,
     DiceLoss, 
     FocalLoss, 
     CrossEntropyClassWeight,
 )
 
 LOSS_MAP = {
-    "default": DiceLoss,
+    "default": CrossEntropyLoss,
     "focal": FocalLoss,
     "dice": DiceLoss,
     "weight": CrossEntropyClassWeight,
