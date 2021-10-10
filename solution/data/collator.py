@@ -3,6 +3,7 @@ from .mlm import mask_tokens
 
 
 class DefaultDataCollator:
+    """ Default Data Collator class. just do pad only. """
 
     def __init__(self, tokenizer, max_length=None):
         self.tokenizer = tokenizer
@@ -28,6 +29,7 @@ class DefaultDataCollator:
 
 
 class RecentDataCollator:
+    """ Data Collator class for RECENT. Do pad and get head_idx. """
 
     def __init__(self, tokenizer, max_length=None):
         self.tokenizer = tokenizer
@@ -55,6 +57,11 @@ class RecentDataCollator:
 
 
 class MLMDataCollator:
+    """
+    Data Collator class for Masked Language Modeling.
+    Do pad and get corrupted input for label from mlm.
+    """
+
     def __init__(self, tokenizer, max_length=512, mlm_prob=0.15):
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -83,6 +90,7 @@ class MLMDataCollator:
 
 
 class EntityDataCollator:
+    """ Data Collator class for Entity Embedding. Do pad on input_ids and entity_ids. """
 
     def __init__(self, tokenizer, max_length=None):
         self.tokenizer = tokenizer
