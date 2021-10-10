@@ -9,6 +9,16 @@ def mask_tokens(
     tokenizer: PreTrainedTokenizer,
     mlm_probability=0.15,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
+    """ The input tokens are randomly converted into mask tokens.
+    Examples:
+        "조지 해리슨이 쓰고 [MASK]가"
+    Args:
+        inputs:             Original inputs
+        tokenizer:          Tokenizer for text tokenization.
+        mlm_probability:    The ratio of mask tokens.
+    Returns:
+        Inputs and labels that are randomly converted into mask tokens.
+    """
     if tokenizer.mask_token is None:
         raise ValueError(
             "This tokenizer does not have a mask token which is necessary for masked language modeling. Remove the --mlm flag if you want to use this tokenizer."

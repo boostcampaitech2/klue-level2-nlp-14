@@ -8,6 +8,7 @@ from sklearn.utils.class_weight import compute_class_weight
 
 
 class DiceLoss(torch.nn.Module):
+    """ Compute dice loss """
     def __init__(self, alpha: float = 1.0, gamma: float = 1.0, reduction: str = "mean") -> None:
         super().__init__()
         self.alpha = alpha
@@ -32,6 +33,7 @@ class DiceLoss(torch.nn.Module):
 
 
 class FocalLoss(torch.nn.Module):
+    """ Compute focal loss """
     def __init__(self, alpha: float = None, gamma: float = 0.5, size_average=True):
         super(FocalLoss, self).__init__()
         self.gamma = gamma
@@ -64,6 +66,7 @@ class FocalLoss(torch.nn.Module):
 
 
 class CrossEntropyClassWeight(torch.nn.Module):
+    """ Compute cross entropy loss with class weights """
     def __init__(self, all_data) -> None:
         super().__init__()
         self.all_data = all_data

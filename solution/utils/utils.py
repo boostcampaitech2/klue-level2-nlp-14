@@ -5,6 +5,7 @@ import torch
 
 
 def softmax(arr: np.ndarray, axis: int = -1):
+    """ Applies the Softmax function to an n-dimensional input Tensor rescaling them """
     c = arr.max(axis=axis, keepdims=True)
     s = arr - c
     nominator = np.exp(s)
@@ -14,6 +15,7 @@ def softmax(arr: np.ndarray, axis: int = -1):
 
 
 def set_seeds(seed=42):
+    """ A function that fixes a random seed for reproducibility """
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)

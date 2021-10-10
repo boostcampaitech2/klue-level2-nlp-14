@@ -1,3 +1,11 @@
+# new_run.py
+"""
+Execution file for model training, inference, and analysis.
+
+Functions:
+    main(command_args): Training, inference, and analysis are conducted according to command args.
+"""
+
 import os
 import sys
 import argparse

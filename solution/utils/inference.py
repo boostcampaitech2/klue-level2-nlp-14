@@ -4,6 +4,7 @@ from .utils import softmax
 
 
 def basic_inference(test_dataset, trainer, task_infos, training_args):
+    """ basic inference function """
     logits = trainer.predict(test_dataset)[0]
     probs = softmax(logits).tolist()
     result = np.argmax(logits, axis=-1).tolist()

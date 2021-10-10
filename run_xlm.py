@@ -1,3 +1,8 @@
+# run_xlm.py
+"""
+Execution file for training for xlm model. (The baseline provided in the competition.)
+"""
+
 import os
 import torch
 import argparse

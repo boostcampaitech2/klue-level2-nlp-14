@@ -6,6 +6,23 @@ from .argparse import lambda_field
 
 @dataclass
 class HPSearchArguments:
+    """ Arguments related to hyperparameter search.
+    Attributes:
+        smoke_test:             Whether it's a smoke test or not.
+        ray_address:            The address to use for ray.
+        server_address:         The address of server to connect to.
+        method:                 Hyperparameter search method.
+        backend:                Hyperparameter search library.
+        num_samples:            The number of random search trials.
+        save_ckpt:              Whether to save the checkpoint.
+        objective_metric:       The objective metric of hyperparameter search.
+        hp_per_device_train_batch_size: The batch size per GPU/TPU core/CPU for training.
+        hp_per_device_eval_batch_size:  The batch size per GPU/TPU core/CPU for evaluation.
+        hp_learning_rate:       The initial learning rate for optimizer.
+        hp_warmup_ratio:        Ratio of total training steps used for a linear warmup from 0 to learning_rate.
+        hp_num_train_epochs:    Total number of training epochs to perform.
+        hp_weight_decay:        The weight decay to apply to layers.
+    """
     smoke_test: bool = field(
         default=False, metadata={"help": "Finish quickly for testing"},
     )

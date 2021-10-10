@@ -296,7 +296,7 @@ def get_entity_embedding(
     object_start_marker: str,
     object_end_marker: str
 ) -> Dict[str, List[Any]]:
-
+    """ returns entity embeddings """
     subj_start_id = tokenizer.convert_tokens_to_ids(subject_start_marker)
     subj_end_id = tokenizer.convert_tokens_to_ids(subject_end_marker)
     obj_start_id = tokenizer.convert_tokens_to_ids(object_start_marker)

@@ -1,3 +1,8 @@
+# run_xlm_inf.py
+"""
+Execution file for inference for xlm model. (The baseline provided in the competition.)
+"""
+
 from transformers import AutoTokenizer, AutoConfig, AutoModelForSequenceClassification, Trainer, TrainingArguments
 from torch.utils.data import DataLoader
 from solution.data.load_data import *

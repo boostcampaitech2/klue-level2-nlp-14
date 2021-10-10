@@ -3,8 +3,12 @@ from .mlm import mask_tokens
 
 
 class DefaultDataCollator:
-    """ Default Data Collator class. just do pad only. """
-
+    """ Default Data Collator
+    Attributes:
+        tokenizer:  Tokenizer for text tokenization.
+        max_length: The maximum length of the sequence.
+    """
+    
     def __init__(self, tokenizer, max_length=None):
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -29,8 +33,12 @@ class DefaultDataCollator:
 
 
 class RecentDataCollator:
-    """ Data Collator class for RECENT. Do pad and get head_idx. """
-
+    """ Data Collator for recent model
+    Attributes:
+        tokenizer:  Tokenizer for text tokenization.
+        max_length: The maximum length of the sequence.
+    """
+  
     def __init__(self, tokenizer, max_length=None):
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -57,9 +65,11 @@ class RecentDataCollator:
 
 
 class MLMDataCollator:
-    """
-    Data Collator class for Masked Language Modeling.
-    Do pad and get corrupted input for label from mlm.
+    """ Data Collator for MLM(Masked Language Model)
+    Attributes:
+        tokenizer:  Tokenizer for text tokenization.
+        max_length: The maximum length of the sequence.
+        mlm_prob:   The ratio of mask tokens.
     """
 
     def __init__(self, tokenizer, max_length=512, mlm_prob=0.15):
@@ -90,7 +100,11 @@ class MLMDataCollator:
 
 
 class EntityDataCollator:
-    """ Data Collator class for Entity Embedding. Do pad on input_ids and entity_ids. """
+    """ Entity Data Collator
+    Attributes:
+        tokenizer:  Tokenizer for text tokenization.
+        max_length: The maximum length of the sequence.
+    """
 
     def __init__(self, tokenizer, max_length=None):
         self.tokenizer = tokenizer

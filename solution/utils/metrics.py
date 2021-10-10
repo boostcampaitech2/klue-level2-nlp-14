@@ -31,6 +31,7 @@ def compute_auprc(probs, labels):
 
 
 def get_confusion_matrix(logit_or_preds, labels, is_logit=True):
+    """ Compute and Draw the Confusion Matrix """
     preds = np.argmax(logit_or_preds, axis=1).ravel() if is_logit else logit_or_preds
     cm = confusion_matrix(labels, preds)
     norm_cm = cm / np.sum(cm, axis=1)[:,None]
@@ -41,6 +42,7 @@ def get_confusion_matrix(logit_or_preds, labels, is_logit=True):
 
 
 def compute_klue_re_leaderboard(eval_pred):
+    """ Compute the KLUE-RE leaderboard metrics """
     # Parsing predictions and labels
     preds, labels = eval_pred
     # Preprocess no_relation for micro F1
@@ -64,6 +66,7 @@ def compute_klue_re_leaderboard(eval_pred):
 
 
 def compute_klue_re_recent_leaderboard(eval_pred):
+    """ Compute the KLUE-RE leaderboard metrics for recent model """
     # Parsing predictions and labels
     preds, labels = eval_pred
     # 아래 한줄이 :compute_klue_re_leaderboard:와 다릅니다

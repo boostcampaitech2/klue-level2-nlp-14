@@ -29,7 +29,7 @@ def entity_tagging(
     """
     KLUE Baseline preprocessing function. Follow the steps bellow.
     1. mark entity spans
-        - <subj>subject entity word</subj> ... <obj>object entity word</obj>
+        - "<obj>조지 해리슨</obj>이 쓰고 <subj>비틀즈</subj>가"
     2. convert example to features
         - fix tokenization errors
         - convert tokens to input_ids
@@ -41,6 +41,7 @@ def entity_tagging(
         tokenizer: Tokenizer object (maybe huggingface/transformers' PreTrainedTokenizerFast)
         task_infos: Task information. e.g., entity marker, number of classes, etc.
         mode: Whether this function is used in train or not
+
     """
     markers = task_infos.markers
     _mark_entity_spans = partial(mark_entity_spans, **markers)
@@ -72,7 +73,7 @@ def type_entity_tagging(
     """
     KLUE Baseline preprocessing function with entity type. Follow the steps bellow.
     1. type mark entity spans
-        - <subj:PER>subject entity word</subj:PER> ... <obj:DAT>object entity word</obj:DAT>
+        - "<obj:PER>조지 해리슨</obj:PER>이 쓰고 <subj:ORG>비틀즈</subj:ORG>가"
     2. convert example to features
         - fix tokenization errors
         - convert tokens to input_ids
@@ -128,6 +129,7 @@ def entity_tagging_embedding(
         task_infos: Task information. e.g., entity marker, number of classes, etc.
         mode: Whether this function is used in train or not
     """
+
     markers = task_info.markers
     _mark_entity_spans = partial(mark_entity_spans, **markers)
     _convert_example_to_features = partial(
@@ -181,6 +183,7 @@ def recent_entity_tagging(
         task_infos: Task information. e.g., entity marker, number of classes, etc.
         mode: Whether this function is used in train or not
     """
+
     markers = task_infos.markers
     _mark_entity_spans = partial(mark_entity_spans, **markers)
     _convert_example_to_features = partial(

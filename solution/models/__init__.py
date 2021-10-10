@@ -18,6 +18,7 @@ mod = sys.modules[__name__]
 
 # Get model
 def basic_model_init(model_args, task_infos, tokenizer):
+    """ Initialization function for basic models """
     config = AutoConfig.from_pretrained(
         model_args.model_name_or_path,
         num_labels=task_infos.num_labels,
@@ -39,6 +40,7 @@ def basic_model_init(model_args, task_infos, tokenizer):
 
 
 def recent_model_init(model_args, task_infos, tokenizer):
+    """ Initialization function for recent model """
     config = AutoConfig.from_pretrained(
         model_args.model_name_or_path,
         num_labels=task_infos.num_labels,
