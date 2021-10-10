@@ -5,7 +5,13 @@ from transformers.modeling_outputs import SequenceClassifierOutput
 
 
 class MT5ForSequenceClassification(T5PreTrainedModel):
-    
+    """ MT5 model for sequence classification
+    Attributes:
+        num_labels:     The number of labels.
+        mt5:            The mt5 model.
+        classifier:     The classifier for sequence classification.
+        model_parallel: Whether it's parallel or not.
+    """
     def __init__(self, config):
         super().__init__(config)
         self.num_labels = config.num_labels

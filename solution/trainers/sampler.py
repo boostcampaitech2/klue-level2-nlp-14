@@ -1,10 +1,46 @@
 from transformers import Trainer
 import datasets
 from torch.utils.data import DataLoader
-from torchsampler import ImbalancedDatasetSampler # pip install https://github.com/ufoym/imbalanced-dataset-sampler/archive/master.zip
+# pip install https://github.com/ufoym/imbalanced-dataset-sampler/archive/master.zip
+from torchsampler import ImbalancedDatasetSampler
+from ..utils import (
+    LOSS_MAP,
+    FocalLoss,
+)
+
+
+class CustomTrainer(Trainer):
+    """ Trainer with custom loss function """
+    def compute_loss(self, model, inputs, return_outputs=False):
+        labels = inputs.pop("labels")
+        outputs = model(**inputs)
+        logits = outputs.logits
+
+        if self.args.loss == "weight":
+            criterion = LOSS_MAP[self.args.loss](self.train_dataset['label'])
+        else:
+            criterion = LOSS_MAP[self.args.loss]()
+
+        loss = criterion(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+
+        return (loss, outputs) if return_outputs else loss
+
+
+class XLMTrainer(Trainer):
+    """ Trainer for XLM """
+    def compute_loss(self, model, inputs, return_outputs=False):
+        labels = inputs.pop("labels")
+        outputs = model(**inputs)
+        logits = outputs.logits
+
+        criterion = FocalLoss(gamma=0.5)
+        loss = criterion(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+
+        return (loss, outputs) if return_outputs else loss
 
 
 class BalancedSamplerTrainer(Trainer):
+    """ Trainer with the balanced sampler """
     def get_train_dataloader(self) -> DataLoader:
         """
         Returns the training :class:`~torch.utils.data.DataLoader`.
@@ -12,7 +48,7 @@ class BalancedSamplerTrainer(Trainer):
         """
         if self.train_dataset is None:
             raise ValueError("Trainer: training requires a train_dataset.")
-        
+
         train_dataset = self.train_dataset
         if isinstance(train_dataset, datasets.Dataset):
             train_dataset = self._remove_unused_columns(train_dataset, description="training")
@@ -34,3 +70,17 @@ class BalancedSamplerTrainer(Trainer):
             num_workers=self.args.dataloader_num_workers,
             pin_memory=self.args.dataloader_pin_memory,
         )
+
+    def compute_loss(self, model, inputs, return_outputs=False):
+        labels = inputs.pop("labels")
+        outputs = model(**inputs)
+        logits = outputs.get('logits')
+
+        if self.args.loss == "weight":
+            criterion = LOSS_MAP[self.args.loss](self.train_dataset['label'])
+        else:
+            criterion = LOSS_MAP[self.args.loss]()
+
+        loss = criterion(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+
+        return (loss, outputs) if return_outputs else loss

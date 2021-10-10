@@ -1,8 +1,10 @@
 import os
 import json
-from typing import List, Tuple, Dict, Anys
+from typing import List, Tuple, Dict, Any, Union
 from kss import split_sentences
 import numpy as np
+import torch
+
 from .bpetokenizer import KoBpeTokenizer
 from .modeling_roberta import RobertaForCharNER
 
@@ -26,9 +28,14 @@ NER_FILES = {
     }
 
 class NERInterface:
-    
+    """
+    PORORO Named Entity Recognition Interface for huggingface.
+    Do not use fairseq! and support batch mode.
+    """
+
     @classmethod
-    def from_pretrained(cls, lang="ko", device="cuda"):
+    def from_pretrained(cls, lang="ko", device="cpu"):
+        """ Read from files and huggingface hub. """
         filenames = NER_FILES[lang]
         path = "/".join(__file__.split("/")[:-1])
         wsd = filenames.pop("wsd", None)
@@ -36,7 +43,7 @@ class NERInterface:
         if wsd is not None:
             wsd_dict = json.load(open(os.path.join(path, wsd), "r"))
         vocab_file = filenames.pop("vocab", None)
-        vocab = None
+        tokenizer = None
         if vocab_file is not None:
             tokenizer = KoBpeTokenizer.from_file(os.path.join(path, vocab_file))
         label_file = filenames.pop("label", None)
@@ -57,17 +64,19 @@ class NERInterface:
             wsd_dict=wsd_dict,
             device=device,
         )
-    
+
     def __init__(
         self,
         model,
         charbpe,
         label,
         wsd_dict,
+        device,
     ):
         self._model = model
         self._sent_tokenizer = split_sentences
         self.bpe = charbpe
+        self._device = device
         self._label = label
         self._tags = {
             "PS": "PERSON",
@@ -91,23 +100,26 @@ class NERInterface:
         self._cls2cat = None
         self._quant2cat = None
         self._term2cat = None
-        
+
     @property
     def id2label(self):
+        """ Convert ids to labels """
         return {i: label for label, i in self._label.items()}
-    
+
     @property
     def label2id(self):
+        """ Convert labels to ids """
         return {label: i for label, i in self._label.items()}
-    
+
     def _prepare_inputs(self, inputs: Dict[str, Union[torch.Tensor, Any]]) -> Dict[str, Union[torch.Tensor, Any]]:
+        """ Prepare input to be placed on the same device in inference. """
         for k, v in inputs.items():
             if isinstance(v, torch.Tensor):
-                kwargs = dict(device=self.device)
+                kwargs = dict(device=self._device)
                 inputs[k] = v.to(**kwargs)
-                
+
         return inputs
-        
+
     def apply_dict(self, tags: List[Tuple[str, str]]):
         """
         Apply pre-defined dictionary to get detail tag info
@@ -124,7 +136,7 @@ class NERInterface:
             else:
                 result.append(pair)
         return result
-    
+
     def _apply_wsd(self, tags: List[Tuple[str, str]]):
         """
         Apply Word Sense Disambiguation to get detail tag info
@@ -135,7 +147,7 @@ class NERInterface:
         """
         # https://github.com/kakaobrain/pororo/blob/master/pororo/tasks/named_entity_recognition.py#L289
         raise NotImplementedError
-        
+
     def _postprocess(self, tags: List[Tuple[str, str]]):
         """
         Postprocess characted tags to concatenate BIO
@@ -182,13 +194,21 @@ class NERInterface:
                    pair[1]) if pair[0] != " " else (" ", "O")
                   for pair in result]
         return result
-    
+
     def sent_tokenize(self, texts: List[str]) -> List[List[str]]:
+        """
+        Split input text into sentences
+        Args:
+            texts (List[str]): input sequences for sentence split
+        Returns:
+            texts (List[List[str]]): texts separated into sentences
+            num_sentences (List[str]): A list containing the number of each sentence for each sample.
+        """
         texts = [text.strip() for text in texts]
         texts = self._sent_tokenizer(texts)
         num_sentences = [len(sentences) for sentences in texts]
         return texts, num_sentences
-    
+
     def __call__(self, texts: str, **kwargs):
         """
         Conduct named entity recognition with character BERT
@@ -201,26 +221,26 @@ class NERInterface:
         """
         apply_wsd = kwargs.get("apply_wsd", False)
         ignore_labels = kwargs.get("ignore_labels", [])
-        
+
         if isinstance(texts, str):
             texts = [texts]
-        
+
         # Sentence split
         texts, n_sents = self.sent_tokenize(texts)
         texts = flatten(texts)
-        
+
         # tokenize
         tokens = self.bpe(texts, return_tokens=True)
         input_ids = self.bpe(
-            texts, 
-            add_special_tokens=True, 
+            texts,
+            add_special_tokens=True,
             return_tensors=True
         )
         input_ids = self._prepare_inputs({"input_ids": input_ids})
         # predict tags
-        logits = self._model(input_ids).logits
+        logits = self._model(**input_ids).logits
         results = logits[:, 1:-1:, :].argmax(dim=-1).cpu().numpy()
-        
+
         labelmap = lambda x: self.id2label[x + self.bpe.nspecial]
         labels = np.vectorize(labelmap)(results)
         token_label_pairs = [
@@ -248,5 +268,5 @@ class NERInterface:
                 result.extend([(" ", "O")])
                 ix += 1
             results.append(result[:-1])
-            
+
         return results

@@ -1,3 +1,4 @@
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -11,11 +12,11 @@ from .file_utils import RELATION_CLASS
 def compute_micro_f1(logits, labels, label_indices=None):
     """ Compute Micro F1 score for specific labels """
     predictions = np.argmax(logits, axis=1).ravel()
-    micro_f1 = f1_score(labels, predictions, 
+    micro_f1 = f1_score(labels, predictions,
                         average="micro", labels=label_indices)
     return micro_f1
 
-    
+
 def compute_auprc(probs, labels):
     """ Compute Area Under the Precision-Recall Curve """
     onehots = np.eye(N_CLASSES)[labels]
@@ -29,8 +30,9 @@ def compute_auprc(probs, labels):
     return auprc
 
 
-def get_confusion_matrix(logits, labels):
-    preds = np.argmax(logits, axis=1).ravel()
+def get_confusion_matrix(logit_or_preds, labels, is_logit=True):
+    """ Compute and Draw the Confusion Matrix """
+    preds = np.argmax(logit_or_preds, axis=1).ravel() if is_logit else logit_or_preds
     cm = confusion_matrix(labels, preds)
     norm_cm = cm / np.sum(cm, axis=1)[:,None]
     cm = pd.DataFrame(norm_cm, index=RELATION_CLASS, columns=RELATION_CLASS)
@@ -40,6 +42,7 @@ def get_confusion_matrix(logits, labels):
 
 
 def compute_klue_re_leaderboard(eval_pred):
+    """ Compute the KLUE-RE leaderboard metrics """
     # Parsing predictions and labels
     preds, labels = eval_pred
     # Preprocess no_relation for micro F1
@@ -62,10 +65,32 @@ def compute_klue_re_leaderboard(eval_pred):
     }
 
 
+def compute_klue_re_recent_leaderboard(eval_pred):
+    """ Compute the KLUE-RE leaderboard metrics for recent model """
+    # Parsing predictions and labels
+    preds, labels = eval_pred
+    # 아래 한줄이 :compute_klue_re_leaderboard:와 다릅니다
+    labels = labels[:, 0] # get relation class
+    # Preprocess no_relation for micro F1
+    no_relation_label_idx = RELATION_CLASS.index("no_relation")
+    label_indices = list(range(len(RELATION_CLASS)))
+    label_indices.remove(no_relation_label_idx)
+    # Compute micro F1
+    micro_f1 = compute_micro_f1(preds, labels, label_indices)
+    # Compute AURPC
+    auprc = compute_auprc(preds, labels)
+    return {
+        "micro_f1": micro_f1,
+        "auprc": auprc,
+    }
+
+
 N_CLASSES = len(RELATION_CLASS)
 
 TASK_METRIC_MAP = {
     "klue_re": compute_klue_re_leaderboard,
     "tapt": None,
     "klue_re_type": compute_klue_re_leaderboard,
+    "recent": compute_klue_re_recent_leaderboard,
+    "klue_re_entity_embedding": compute_klue_re_leaderboard,
 }

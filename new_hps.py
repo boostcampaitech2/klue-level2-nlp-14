@@ -1,3 +1,12 @@
+# new_hps.py
+"""
+Execution file for hyperparameter tuning.
+
+Functions:
+    tune_transformer(num_samples, gpus_per_trial, smoke_test, args):
+        hyperparameter tuning with settings
+"""
+
 # https://github.com/huggingface/transformers/blob/55695df0f7bce816b6d53ab2d43d51427ea77a75/src/transformers/integrations.py#L140
 import os
 import sys

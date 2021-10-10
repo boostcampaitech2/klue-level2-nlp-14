@@ -12,6 +12,7 @@ __pycache__/
 *.csv
 *.txt
 *.lock
+*.npy
 
 # Folder
 cache/
@@ -24,6 +25,7 @@ best_model/
 *.pt
 *.bin
 *.pth
+*.pkl
 
 # C extensions
 *.so
@@ -157,6 +159,7 @@ dmypy.json
 /klue_dir
 /results
 /wandb
+/analysis
 /.git
 
 # Results
@@ -167,5 +170,8 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# OS files
+.DS_Store
 
 # End of https://www.toptal.com/developers/gitignore/api/python
