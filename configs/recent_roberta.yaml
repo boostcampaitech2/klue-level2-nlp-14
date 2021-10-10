@@ -8,6 +8,7 @@ DataArguments:
 
 # TrainingArguments
 TrainingArguments:
+  trainer_class: default
   report_to: wandb
   run_name: recent_tapt
   output_dir: output

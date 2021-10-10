@@ -7,8 +7,9 @@ DataArguments:
 
 # TrainingArguments
 TrainingArguments:
+  trainer_class: default
   report_to: wandb
-  run_name: 1005_klue_roberta_lstm_2_v201b
+  run_name: test
   output_dir: output
   learning_rate: 3e-5
   do_train: True
@@ -18,15 +19,15 @@ TrainingArguments:
   save_strategy: epoch
   per_device_train_batch_size: 32
   per_device_eval_batch_size: 32
-  num_train_epochs: 4
+  num_train_epochs: 1
   # eval_steps: 100
   # save_steps: 100
   save_total_limit: 5
-  fp16: True
+  fp16: False
   weight_decay: 0.01
   # warmup_ratio: 0.2
   load_best_model_at_end: True
-  # metric_for_best_model: micro_f1
+  metric_for_best_model: micro_f1
   logging_dir: logs
   lr_scheduler_type: linear
 
@@ -39,7 +40,5 @@ ModelingArguments:
 # Project Arguments
 ProjectArguments:
   task: klue_re
-  wandb_project: klue_re_klue_roberta_taeuk
-  save_model_dir: best_models/1005_klue_roberta_lstm_2_v201b
-  submit_dir: prediction
+  wandb_project: klue_re
   checkpoint: None

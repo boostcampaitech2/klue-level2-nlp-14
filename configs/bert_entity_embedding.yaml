@@ -8,6 +8,7 @@ DataArguments:
 
 # TrainingArguments
 TrainingArguments:
+  trainer_class: default
   report_to: wandb  #wandb report
   run_name: entity_embedding_bert
   output_dir: output
@@ -50,20 +51,3 @@ ProjectArguments:
   wandb_project: klue_re
   save_model_dir: best
   checkpoint: None
-
-# Hyperparameter Search Arguments
-HPSearchArguments:
-  smoke_test: False
-  ray_address: None
-  server_address: None
-  method: ASHA
-  backend: optuna
-  num_samples: 2
-  save_ckpt: False
-  objective_metric: eval_auprc
-  hp_per_device_train_batch_size: [8, 16, 32]
-  hp_per_device_eval_batch_size: 32
-  hp_learning_rate: [1e-5, 2e-5, 3e-5, 5e-5]
-  hp_warmup_ratio: [0., 0.1, 0.2, 0.6]
-  hp_num_train_epochs: [2, 3]
-  hp_weight_decay: [0.0, 0.01]

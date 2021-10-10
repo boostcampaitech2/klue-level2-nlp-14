@@ -83,7 +83,6 @@ def main(command_args):
         args = parser.parse_args_into_dataclasses()
 
     data_args, training_args, model_args, project_args = args
-
     # Set seed
     set_seeds(training_args.seed)
 
@@ -335,7 +334,7 @@ def main(command_args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--fold', type=int, default=0, help='k-fold fold num: 1~5 & no k-fold: 0 (default)')
-    parser.add_argument('--config', type=str, default="config/kfold.yaml", help='config file path (default: config/kfold.yaml)')
+    parser.add_argument('--config', type=str, default="configs/kfold.yaml", help='config file path (default: configs/kfold.yaml)')
     command_args = parser.parse_args()
 
     main(command_args)

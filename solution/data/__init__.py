@@ -26,15 +26,22 @@ def entity_tagging(
     task_infos=None,
     mode="train",
 ):
-    """ Entity tagging
-    Examples:
-        "<obj>조지 해리슨</obj>이 쓰고 <subj>비틀즈</subj>가"
+    """
+    KLUE Baseline preprocessing function. Follow the steps bellow.
+    1. mark entity spans
+        - "<obj>조지 해리슨</obj>이 쓰고 <subj>비틀즈</subj>가"
+    2. convert example to features
+        - fix tokenization errors
+        - convert tokens to input_ids
+    3. remove columns
+        - except `input_ids`, `labels`
+
     Args:
-        dataset:    Original dataset
-        tokenizer:  Tokenizer for text tokenization
-        task_info:  Project task informations
-    Returns:
-        Tokenized dataset from which unnecessary columns have been deleted.
+        dataset: huggingface Dataset object used for training
+        tokenizer: Tokenizer object (maybe huggingface/transformers' PreTrainedTokenizerFast)
+        task_infos: Task information. e.g., entity marker, number of classes, etc.
+        mode: Whether this function is used in train or not
+
     """
     markers = task_infos.markers
     _mark_entity_spans = partial(mark_entity_spans, **markers)
@@ -63,16 +70,21 @@ def type_entity_tagging(
     task_infos=None,
     mode="train",
 ):
-    """ Type Entity tagging
-    Examples:
-        "<obj:PER>조지 해리슨</obj:PER>이 쓰고 <subj:ORG>비틀즈</subj:ORG>가"
+    """
+    KLUE Baseline preprocessing function with entity type. Follow the steps bellow.
+    1. type mark entity spans
+        - "<obj:PER>조지 해리슨</obj:PER>이 쓰고 <subj:ORG>비틀즈</subj:ORG>가"
+    2. convert example to features
+        - fix tokenization errors
+        - convert tokens to input_ids
+    3. remove columns
+        - except `input_ids`, `labels`
+
     Args:
-        dataset:    Original dataset
-        tokenizer:  Tokenizer for text tokenization
-        task_info:  Project task informations
-        mode:       Train mode or another mode.
-    Returns:
-        Tokenized dataset from which unnecessary columns have been deleted.
+        dataset: huggingface Dataset object used for training
+        tokenizer: Tokenizer object (maybe huggingface/transformers' PreTrainedTokenizerFast)
+        task_infos: Task information. e.g., entity marker, number of classes, etc.
+        mode: Whether this function is used in train or not
     """
     _convert_type_example_to_features = partial(
         convert_type_example_to_features,
@@ -98,7 +110,26 @@ def entity_tagging_embedding(
     task_info=None,
     mode="train",
 ):
-    """ Entity tagging with embedding """
+    """
+    KLUE Baseline preprocessing function with entity embedding. Follow the steps bellow.
+    1. mark entity spans
+        - <subj>subject entity word</subj> ... <obj>object entity word</obj>
+    2. convert example to features
+        - fix tokenization errors
+        - convert tokens to input_ids
+    3. get entity ids
+        - if input tokens is ["<subj>", "이순신", "</subj>", "##은", "<obj>", "조선", "##중기", "</obj>", "##의", "무신", "##이다"],
+          then entity ids is [0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0]
+    4. remove columns
+        - except `input_ids`, `entity_ids`, `labels`
+
+    Args:
+        dataset: huggingface Dataset object used for training
+        tokenizer: Tokenizer object (maybe huggingface/transformers' PreTrainedTokenizerFast)
+        task_infos: Task information. e.g., entity marker, number of classes, etc.
+        mode: Whether this function is used in train or not
+    """
+
     markers = task_info.markers
     _mark_entity_spans = partial(mark_entity_spans, **markers)
     _convert_example_to_features = partial(
@@ -133,7 +164,26 @@ def recent_entity_tagging(
     task_infos=None,
     mode="train",
 ):
-    """ Entity tagging for recent model """
+    """
+    Preprocessing function for recent model. Follow the steps bellow.
+    1. mark entity spans
+        - <subj>subject entity word</subj> ... <obj>object entity word</obj>
+    2. convert example to features
+        - fix tokenization errors
+        - convert tokens to input_ids
+    3. label shaping
+        - since recent's label is different from others, shaping is required.
+    4. remove columns
+        - except `input_ids`, `head_idx`, `labels`
+        - `head_idx` is an argument that determines which head result is recieved in RECENT.
+
+    Args:
+        dataset: huggingface Dataset object used for training
+        tokenizer: Tokenizer object (maybe huggingface/transformers' PreTrainedTokenizerFast)
+        task_infos: Task information. e.g., entity marker, number of classes, etc.
+        mode: Whether this function is used in train or not
+    """
+
     markers = task_infos.markers
     _mark_entity_spans = partial(mark_entity_spans, **markers)
     _convert_example_to_features = partial(
