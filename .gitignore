@@ -12,6 +12,7 @@ __pycache__/
 *.csv
 *.txt
 *.lock
+*.npy
 
 # Folder
 cache/
@@ -168,5 +169,8 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# OS files
+.DS_Store
 
 # End of https://www.toptal.com/developers/gitignore/api/python
