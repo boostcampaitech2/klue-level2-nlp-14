@@ -34,10 +34,10 @@ class HPSearchArguments:
         default="eval_auprc", metadata={"help": "[eval_auprc, eval_f1,eval_loss]"},
     )
     hp_per_device_train_batch_size: List[int] = lambda_field(
-        default=[8, 16, 32], metadata={"help": ""},
+        default=[8, 16, 32], metadata={"help": "batch size per device for train mode"},
     )
     hp_per_device_eval_batch_size: Union[List[int]] = lambda_field(
-        default=32, metadata={"help": ""},
+        default=32, metadata={"help": "batch size per device for evaluation mode"},
     )
     hp_learning_rate: List[float] = lambda_field(
         default=[1e-5, 2e-5, 3e-5, 5e-5], metadata={"help": "Input choices categorically e.g. [0.0, 0.1, 0.3]"},
