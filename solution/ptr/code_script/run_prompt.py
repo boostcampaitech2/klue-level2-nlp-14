@@ -9,6 +9,7 @@ from tqdm import tqdm, trange
 from collections import Counter
 
 import numpy as np
+import pandas as pd
 
 import torch
 from torch.utils.data import RandomSampler, DataLoader, SequentialSampler
@@ -16,11 +17,10 @@ from torch.utils.data import RandomSampler, DataLoader, SequentialSampler
 import wandb
 
 from arguments import get_args_parser
-from templating import get_temps
+from utils import set_seeds, get_temps, FocalLoss, get_confusion_matrix, softmax, NUM2LABEL
 from modeling import get_model, get_tokenizer
 from data_prompt import REPromptDataset
 from optimizing import get_optimizer
-from ....solution.utils import FocalLoss, get_confusion_matrix, set_seeds
 
 # Helper Functions
 def f1_score_for_PTR(output, label, rel_num, na_num):
@@ -109,6 +109,17 @@ def evaluate(model, dataset, dataloader, is_test=False):
             pred = np.argmax(scores, axis = -1)
             mi_f1 = f1_score_for_PTR(pred, all_labels, dataset.num_class, dataset.NA_NUM)
         else:
+            # If test, Save Submission.csv file
+            test_dataset_dir = "test_data.csv"
+            output_prob = softmax(scores)
+            pred_answer = scores.argmax(-1)
+            df_test = pd.read_csv(test_dataset_dir)
+            test_id = df_test['id'].values
+            output = pd.DataFrame({'id':test_id,
+                                   'pred_label':pred_answer,
+                                   'probs':output_prob.tolist(),})
+            output.pred_label = output.pred_label.map(NUM2LABEL)
+            output.to_csv(f'submission.csv', index=False)
             mi_f1 = None
 
     return mi_f1
@@ -130,7 +141,7 @@ def main(args):
     # Get training data
     # If the dataset has been saved, 
     # the code ''dataset = REPromptDataset(...)'' is not necessary.
-    for split in ['train, val, test']:
+    for split in ['train', 'val', 'test']:
         dataset = REPromptDataset(
             path  = args.data_dir, 
             name = f'{split}.txt', 
@@ -227,13 +238,13 @@ def main(args):
         if mi_f1 > mx_res:
             mx_res = mi_f1
             mx_epoch = epoch
-            torch.save(model.state_dict(), args.output_dir+"/"+'parameter'+str(epoch)+".pkl")
+            torch.save(model.state_dict(), args.output_dir+"/"+'parameter'+str(mx_epoch)+".pkl")
 
     print(hist_mi_f1)
 
     # Predict Test data for submission
     model.load_state_dict(torch.load(args.output_dir+"/"+'parameter'+str(mx_epoch)+".pkl"))
-    mi_f1, _ = evaluate(model, test_dataset, test_dataloader, is_test=True)
+    mi_f1 = evaluate(model, test_dataset, test_dataloader, is_test=True)
 
     print(mi_f1)
 

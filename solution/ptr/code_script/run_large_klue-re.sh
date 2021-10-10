@@ -14,5 +14,5 @@ python3 run_prompt.py \
 --num_train_epochs 4 \
 --weight_decay 1e-2 \
 --adam_epsilon 1e-6 \
---temps temp.txt
---wandb_run_name TAPT_Aug2_roberta-large_tapt_bs64_maxlen139_focal_ws0_lr2e-05_lrt1e-05
+--temps temp.txt \
+--wandb_run_name Test_TAPT_Aug2_roberta-large_tapt_bs64_maxlen139_focal_ws0_lr2e-05_lrt1e-05
