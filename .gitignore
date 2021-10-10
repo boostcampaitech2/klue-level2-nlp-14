@@ -25,6 +25,7 @@ best_model/
 *.pt
 *.bin
 *.pth
+*.pkl
 
 # C extensions
 *.so
