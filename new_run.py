@@ -34,7 +34,7 @@ from solution.data import (
     COLLATOR_MAP,
     PREPROCESSING_PIPELINE,
     kfold_split,
-
+)
 from solution.models import (
     MODEL_INIT_FUNC,
 )
@@ -253,7 +253,7 @@ def main(command_args):
         )
         train_dataset = train_dataset
         train_id = train_dataset["guid"]
-        tokenized_train_datasets = pipeline(train_dataset,
+        tokenized_train_datasets = prep_pipeline(train_dataset,
                                            tokenizer,
                                            task_infos,)
 

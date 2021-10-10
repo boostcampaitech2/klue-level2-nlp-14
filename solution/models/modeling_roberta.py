@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
 from transformers.modeling_utils import PreTrainedModel
-from transformers.models.modeling_roberta import (
+from transformers.models.roberta.modeling_roberta import (
   RobertaModel,
   RobertaPreTrainedModel,
   RobertaForSequenceClassification,
