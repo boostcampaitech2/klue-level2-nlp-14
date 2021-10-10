@@ -70,9 +70,91 @@ pip install -r requirements.txt
 
 
 ## Reference
-- [Ray Tune - pbt_transformers_example](https://docs.ray.io/en/master/tune/examples/pbt_transformers.html)
-
 ```
+@inproceedings{lyu-chen-2021-relation,
+  title = "Relation Classification with Entity Type Restriction",
+  author = "Lyu, Shengfei  and
+    Chen, Huanhuan",
+  booktitle = "Findings of the Association for Computational Linguistics: ACL-IJCNLP 2021",
+  month = aug,
+  year = "2021",
+  address = "Online",
+  publisher = "Association for Computational Linguistics",
+  url = "https://aclanthology.org/2021.findings-acl.34",
+  doi = "10.18653/v1/2021.findings-acl.34",
+  pages = "390--395",
+}
+
+@inproceedings{wolf-etal-2020-transformers,
+    title = "Transformers: State-of-the-Art Natural Language Processing",
+    author = "Thomas Wolf and Lysandre Debut and Victor Sanh and Julien Chaumond and Clement Delangue and Anthony Moi and Pierric Cistac and Tim Rault and Rémi Louf and Morgan Funtowicz and Joe Davison and Sam Shleifer and Patrick von Platen and Clara Ma and Yacine Jernite and Julien Plu and Canwen Xu and Teven Le Scao and Sylvain Gugger and Mariama Drame and Quentin Lhoest and Alexander M. Rush",
+    booktitle = "Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing: System Demonstrations",
+    month = oct,
+    year = "2020",
+    address = "Online",
+    publisher = "Association for Computational Linguistics",
+    url = "https://www.aclweb.org/anthology/2020.emnlp-demos.6",
+    pages = "38--45"
+}
+
+@inproceedings{optuna_2019,
+    title={Optuna: A Next-generation Hyperparameter Optimization Framework},
+    author={Akiba, Takuya and Sano, Shotaro and Yanase, Toshihiko and Ohta, Takeru and Koyama, Masanori},
+    booktitle={Proceedings of the 25rd {ACM} {SIGKDD} International Conference on Knowledge Discovery and Data Mining},
+    year={2019}
+}
+
+@article{han2021ptr,
+  title={PTR: Prompt Tuning with Rules for Text Classification},
+  author={Han, Xu and Zhao, Weilin and Ding, Ning and Liu, Zhiyuan and Sun, Maosong},
+  journal={arXiv preprint arXiv:2105.11259},
+  year={2021}
+
+@article{liaw2018tune,
+    title={Tune: A Research Platform for Distributed Model Selection and Training},
+    author={Liaw, Richard and Liang, Eric and Nishihara, Robert and
+            Moritz, Philipp and Gonzalez, Joseph E and Stoica, Ion},
+    journal={arXiv preprint arXiv:1807.05118},
+    year={2018}
+}
+
+@software{quentin_lhoest_2021_5510481,
+  author       = {Quentin Lhoest and
+                  Albert Villanova del Moral and
+                  Patrick von Platen and
+                  Thomas Wolf and
+                  Yacine Jernite and
+                  Abhishek Thakur and
+                  Lewis Tunstall and
+                  Suraj Patil and
+                  Mariama Drame and
+                  Julien Chaumond and
+                  Julien Plu and
+                  Joe Davison and
+                  Simon Brandeis and
+                  Teven Le Scao and
+                  Victor Sanh and
+                  Kevin Canwen Xu and
+                  Nicolas Patry and
+                  Angelina McMillan-Major and
+                  Philipp Schmid and
+                  Sylvain Gugger and
+                  Steven Liu and
+                  Nathan Raw and
+                  Sylvain Lesage and
+                  Théo Matussière and
+                  Lysandre Debut and
+                  Stas Bekman and
+                  Clément Delangue},
+  title        = {huggingface/datasets: 1.12.1},
+  month        = sep,
+  year         = 2021,
+  publisher    = {Zenodo},
+  version      = {1.12.1},
+  doi          = {10.5281/zenodo.5510481},
+  url          = {https://doi.org/10.5281/zenodo.5510481}
+}
+
 @misc{park2021klue,
       title={KLUE: Korean Language Understanding Evaluation},
       author={Sungjoon Park and Jihyung Moon and Sungdong Kim and Won Ik Cho and Jiyoon Han and Jangwon Park and Chisung Song and Junseong Kim and Yongsook Song and Taehwan Oh and Joohong Lee and Juhyun Oh and Sungwon Lyu and Younghoon Jeong and Inkwon Lee and Sangwoo Seo and Dongjun Lee and Hyunwoo Kim and Myeonghwa Lee and Seongbo Jang and Seungwon Do and Sunkyoung Kim and Kyungtae Lim and Jongwon Lee and Kyumin Park and Jamin Shin and Seonghyun Kim and Lucy Park and Alice Oh and Jung-Woo Ha and Kyunghyun Cho},
