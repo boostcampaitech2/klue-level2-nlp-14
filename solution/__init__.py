@@ -1,1 +1,1 @@
-from . import models, utils, data, args, trainers, ner
+from . import models, utils, data, args, trainers
