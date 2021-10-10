@@ -1,3 +1,11 @@
+# inference_kfold.py
+"""
+Execution file for the inference for each fold when using K-fold ensemble.
+
+Functions:
+    inference(command_args): The inference is made about one fold.
+"""
+
 import os
 from glob import glob
 import argparse

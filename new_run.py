@@ -1,3 +1,11 @@
+# new_run.py
+"""
+Execution file for model training, inference, and analysis.
+
+Functions:
+    main(command_args): Training, inference, and analysis are conducted according to command args.
+"""
+
 import os
 import sys
 import argparse
@@ -34,7 +42,7 @@ from solution.data import (
     COLLATOR_MAP,
     PREPROCESSING_PIPELINE,
     kfold_split,
-
+)
 from solution.models import (
     MODEL_INIT_FUNC,
 )

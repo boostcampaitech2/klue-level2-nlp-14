@@ -24,6 +24,7 @@ from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
 
 class BertEmbeddingWithEntity(BertEmbeddings):
+    """ Bert Embedding with entity embedding """
 
     def __init__(self, config):
         super().__init__(config)
@@ -80,6 +81,8 @@ class BertEmbeddingWithEntity(BertEmbeddings):
 
 
 class BertModelWithEntity(BertPreTrainedModel):
+    """ Bert model with entity embedding """
+
     def __init__(self, config, add_pooling_layer=True):
         super().__init__(config)
         self.config = config
@@ -201,6 +204,8 @@ class BertModelWithEntity(BertPreTrainedModel):
 
 
 class BertForSequenceClassificationWithEntity(BertPreTrainedModel):
+    """ Bert model with entity embedding for sequence classification """
+
     def __init__(self, config):
         super().__init__(config)
         self.num_labels = config.num_labels

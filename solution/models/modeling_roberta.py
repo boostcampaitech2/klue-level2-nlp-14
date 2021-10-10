@@ -72,6 +72,7 @@ class ClassificationLSTMHead(nn.Module):
 
 
 class RecentMultiClassificationHead(nn.Module):
+    """ Head for multi label classification """
 
     def __init__(self, config):
         super().__init__()
@@ -99,6 +100,7 @@ class RecentMultiClassificationHead(nn.Module):
 
 
 class RobertaForKlueRecent(RobertaPreTrainedModel):
+    """ Roberta model for Recent model """
 
     def __init__(self, config):
         super().__init__(config)
@@ -194,6 +196,8 @@ class RobertaForKlueRecent(RobertaPreTrainedModel):
 
 
 class RobertaForSequenceClassificationLstm(RobertaPreTrainedModel):
+    """ Roberta model for sequence classification with LSTM """
+
     _keys_to_ignore_on_load_missing = [r"position_ids"]
 
     def __init__(self, config):

@@ -4,6 +4,7 @@ from sklearn.model_selection import StratifiedKFold
 
 
 def kfold_split(dataset, n_splits=5, fold=1, random_state=42):
+    """ Split the dataset according to the fold number. """
     full_df = pd.DataFrame(dataset)
     kfold = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
     for fold_idx, (train_indices, valid_indices) in enumerate(kfold.split(full_df, full_df.label), 1): # fold: [1, n_splits]

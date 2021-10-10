@@ -70,6 +70,7 @@ def type_entity_tagging(
         dataset:    Original dataset
         tokenizer:  Tokenizer for text tokenization
         task_info:  Project task informations
+        mode:       Train mode or another mode.
     Returns:
         Tokenized dataset from which unnecessary columns have been deleted.
     """
@@ -97,6 +98,7 @@ def entity_tagging_embedding(
     task_info=None,
     mode="train",
 ):
+    """ Entity tagging with embedding """
     markers = task_info.markers
     _mark_entity_spans = partial(mark_entity_spans, **markers)
     _convert_example_to_features = partial(
@@ -131,6 +133,7 @@ def recent_entity_tagging(
     task_infos=None,
     mode="train",
 ):
+    """ Entity tagging for recent model """
     markers = task_infos.markers
     _mark_entity_spans = partial(mark_entity_spans, **markers)
     _convert_example_to_features = partial(

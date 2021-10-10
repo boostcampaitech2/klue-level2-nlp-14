@@ -29,6 +29,7 @@ LOSS_MAP = {
 
 
 def label_to_num(label):
+    """ Converts labels into numbers. """
     num_label = []
     with open('dict_label_to_num.pkl', 'rb') as f:
         dict_label_to_num = pickle.load(f)

@@ -10,7 +10,7 @@ from ..utils import (
 
 
 class CustomTrainer(Trainer):
-
+    """ Trainer with custom loss function """
     def compute_loss(self, model, inputs, return_outputs=False):
         labels = inputs.pop("labels")
         outputs = model(**inputs)
@@ -27,6 +27,7 @@ class CustomTrainer(Trainer):
 
 
 class XLMTrainer(Trainer):
+    """ Trainer for XLM """
     def compute_loss(self, model, inputs, return_outputs=False):
         labels = inputs.pop("labels")
         outputs = model(**inputs)

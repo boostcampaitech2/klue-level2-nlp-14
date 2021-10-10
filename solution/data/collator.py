@@ -32,7 +32,11 @@ class DefaultDataCollator:
 
 
 class RecentDataCollator:
-
+    """ Data Collator for recent model
+    Attributes:
+        tokenizer:  Tokenizer for text tokenization.
+        max_length: The maximum length of the sequence.
+    """
     def __init__(self, tokenizer, max_length=None):
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -93,7 +97,11 @@ class MLMDataCollator:
 
 
 class EntityDataCollator:
-
+    """ Entity Data Collator
+    Attributes:
+        tokenizer:  Tokenizer for text tokenization.
+        max_length: The maximum length of the sequence.
+    """
     def __init__(self, tokenizer, max_length=None):
         self.tokenizer = tokenizer
         self.max_length = max_length

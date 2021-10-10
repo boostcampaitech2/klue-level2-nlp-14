@@ -66,6 +66,7 @@ def compute_klue_re_leaderboard(eval_pred):
 
 
 def compute_klue_re_recent_leaderboard(eval_pred):
+    """ Compute the KLUE-RE leaderboard metrics for recent model """
     # Parsing predictions and labels
     preds, labels = eval_pred
     # 아래 한줄이 :compute_klue_re_leaderboard:와 다릅니다
