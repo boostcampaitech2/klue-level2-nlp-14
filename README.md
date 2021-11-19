@@ -23,7 +23,7 @@
 | Public Leaderboard  | 77.002         | 81.908 | 1st place |
 | Private Leaderboard | 75.725         | 82.261 | 1st place |
 
-> You can check our solution description : [PRESENTATION LINK](https://github.com/jinmang2/boostcamp_ai_tech_2/blob/main/assets/ppt/klue_re.pdf)
+> You can check our solution description : [PRESENTATION LINK](https://github.com/boostcampaitech2/klue-level2-nlp-14/blob/main/assets/kiyoung2_klue_re.pdf)
 
 ## Usage
 
